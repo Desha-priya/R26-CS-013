@@ -1,0 +1,28 @@
+# Multimodal Content Threat Detection
+
+**Component Owner:** [Your Girlfriend's Name]
+
+## Description
+AI Phishing and Deepfake Detection Layer.  
+Analyzes text, images, videos, and audio to detect synthetic scams and deepfakes.
+
+## Key Responsibilities
+- Text: AI-generated phishing detection
+- Image/Video: Face-swap and lip-sync detection
+- Audio: Voice cloning detection
+- Multimodal fusion → unified threat score
+
+## Current Status
+- Datasets (FaceForensics++, DFDC, ASVspoof) downloaded
+- Text and image detection models under exploration
+
+## Folder Contents
+- `text_detector.py`
+- `video_detector.py`
+- `audio_detector.py`
+- `fusion.py`
+
+## Next Tasks
+- Implement individual modality models
+- Develop fusion logic
+- Create FastAPI endpoint for content scanning

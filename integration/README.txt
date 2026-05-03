@@ -1,0 +1,1 @@
+Shared code for integration (JSON schemas, common utils)

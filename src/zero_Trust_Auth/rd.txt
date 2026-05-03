@@ -1,0 +1,29 @@
+# Continuous Zero-Trust Authentication & Behavioral Biometrics
+
+**Component Owner:** [Your Full Name]
+
+## Description
+Post-Compromise Session Protection Layer.  
+Continuously monitors user behavior and triggers dynamic re-authentication or session lock when risk is elevated.
+
+## Key Responsibilities
+- User-specific behavioral profiling (keystroke, mouse, touch)
+- Real-time anomaly detection
+- Threat-triggered step-up authentication (face liveness, OTP)
+- Adaptive risk thresholding based on session context
+
+## Current Status
+- BB-MAS dataset downloaded and features extracted
+- Basic enrollment and anomaly detection logic in progress
+
+## Folder Contents
+- `enrollment.py` → User profile creation
+- `behavioral_monitor.py` → Real-time scoring
+- `auth_trigger.py` → Step-up challenge logic
+- `risk_scorer.py` → Adaptive thresholding
+
+## Next Tasks
+- Build enrollment phase
+- Implement real-time deviation scoring
+- Add threat alert integration via FastAPI
+- Test standalone behavioral detection

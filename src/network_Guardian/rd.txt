@@ -1,0 +1,27 @@
+# Network Guardian
+
+**Component Owner:** [Mate 1 Name]
+
+## Description
+Zero-Day Intrusion and Anomalous Traffic Detection Layer.  
+Monitors network traffic in real time to detect unknown attacks and suspicious behavior.
+
+## Key Responsibilities
+- Real-time packet/flow analysis
+- Deep learning-based anomaly detection (Transformer/LSTM)
+- Alert generation (JSON) to other layers
+
+## Current Status
+- Literature review completed
+- Dataset exploration in progress
+- Feature extraction ongoing
+
+## Folder Contents
+- `main.py` / `detector.py` → Core detection logic
+- `notebooks/` → Experiments and analysis
+- `models/` → Trained models (gitignored)
+
+## Next Tasks
+- Implement flow feature extraction
+- Train initial anomaly detection model
+- Define JSON alert format
