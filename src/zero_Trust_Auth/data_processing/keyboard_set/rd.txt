@@ -1,0 +1,109 @@
+ds-explore-bb-mas.py - > to explore the files and columns of the datasets.
+
+explore_user_keystroke.py - > to get the column of the exact keystroke csv.
+
+all_keystroke_features(FinalCleaned).py -> this is the py code for extracted all users keyboard_set
+all_keystroke_features(FinalCleaned).csv - >leaned dataset for all 117 users in csv
+
+sanity checks {
+    ###  Dataset Validation & Sanity Check Script
+
+This script is used to perform **basic validation and quality checks** on the processed keystroke dataset (`all_keystroke_features(FinalCleaned).csv`).
+
+It ensures that the extracted features (such as dwell time and flight time) are consistent, valid, and suitable for further modeling in the Zero Trust Authentication system.
+
+---
+
+###  What the Script Does
+
+#### 1. Load Dataset
+
+* Reads the cleaned CSV file using **pandas**
+* Stores it in a DataFrame for analysis
+
+---
+
+#### 2. Basic Preview
+
+* Displays the first few rows (`head()`)
+* Shows statistical summary (`describe()`)
+
+ Helps quickly understand the structure and distribution of the data
+
+---
+
+#### 3. Missing Value Check
+
+* Identifies null or missing values in each column
+
+ Ensures data completeness before training models
+
+---
+
+#### 4. Invalid Value Detection
+
+* Checks for **negative values** in:
+
+  * `dwell_time`
+  * `flight_time`
+
+ These values should not be negative in real keystroke behavior
+
+---
+
+#### 5. Extreme Value Detection
+
+* Detects unusually high values:
+
+  * Dwell time > 10 seconds
+  * Flight time > 5 seconds
+
+ Helps identify outliers or noisy data
+
+---
+
+#### 6. Overlap Ratio Analysis
+
+* Computes the average of the `overlap` feature
+
+ Indicates how often keystrokes overlap (important for typing behavior analysis)
+
+---
+
+#### 7. Session Break Analysis
+
+* Calculates the ratio of `session_break`
+
+ Helps understand how frequently users pause or stop typing
+
+---
+
+#### 8. Key Distribution
+
+* Displays the top 10 most frequently used keys
+
+ Useful for identifying dataset bias or imbalance
+
+---
+
+#### 9. Dataset Health Summary
+
+Provides an overall summary:
+
+* Total number of records
+* Number of unique users
+* Number of unique keys
+ Gives a quick snapshot of dataset diversity and scale
+
+---
+
+Purpose
+
+This script acts as a **sanity check pipeline** to:
+
+* Validate feature extraction correctness
+* Detect anomalies and inconsistencies
+* Ensure high-quality input for machine learning models
+
+
+}

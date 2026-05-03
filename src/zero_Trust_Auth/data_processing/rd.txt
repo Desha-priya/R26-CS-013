@@ -1,0 +1,31 @@
+python files and csv for data processing stage 
+-------------------------------------------------
+
+keyboard - keyboard data extraction
+mouse - mouse data extraction
+
+ds-explore-bb-mas.py - > to explore the files and columns of the datasets.
+
+explore_user_keystroke.py - > to get the column of the exact keystroke csv. {
+   
+    This script is used to explore and understand the structure of the raw BB-MAS keystroke dataset before feature extraction.
+
+    It helps identify:
+
+    Available keyboard data files
+    Column structure
+    Sample data entries
+    Key distributions
+
+    Key Analysis
+        Displays a sample of unique key values
+
+        Helps understand key representation in the dataset
+}
+
+
+all_keystroke_features(FinalCleaned).py -> this is the py code for extracted all users keyboard_set
+all_keystroke_features(FinalCleaned).csv - >leaned dataset for all 117 users in csv
+
+
+
