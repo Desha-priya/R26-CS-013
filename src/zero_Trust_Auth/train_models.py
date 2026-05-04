@@ -14,8 +14,8 @@ from sklearn.model_selection import cross_val_score
 from pathlib import Path
 
 # ** Config ************************************************
-DATA_FILE   =  Path(__file__).resolve().parent.parent / "user_behavioral_profiles_combined.csv"
-MODELS_DIR  = Path(__file__).resolve().parent.parent.parent.parent / "models" / "zero_trust_auth"
+DATA_FILE   =  Path(__file__).resolve().parent / "user_behavioral_profiles_combined.csv"
+MODELS_DIR  = Path(__file__).resolve().parent.parent.parent / "models" / "zero_trust_auth"
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 # Features to use - all 48 columns except 'user'

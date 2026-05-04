@@ -12,7 +12,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-BASE_DIR =Path(__file__).resolve().parent.parent.parent.parent
+BASE_DIR =Path(__file__).resolve().parent.parent.parent
 MODELS_DIR = BASE_DIR / "models" / "zero_trust_auth" 
  
 class RiskEngine:
