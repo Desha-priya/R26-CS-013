@@ -37,9 +37,9 @@ env/
 
 # Data and models
 data/
-models/
+#models/
 *.h5
-*.pkl
+#*.pkl
 
 # OS
 .DS_Store
