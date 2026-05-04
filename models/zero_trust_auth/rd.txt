@@ -1,0 +1,25 @@
+
+### 1. scaler.pkl
+            Used to normalize input features
+            Ensures live keystroke data matches training data scale
+            Prevents incorrect predictions due to different value ranges
+
+### 2. isolation_forest.pkl
+            Pre-trained Isolation Forest model
+            Detects strong anomalies in user behavior
+            Flags completely unusual typing patterns
+
+### 3. oneclass_svm.pkl
+            Pre-trained One-Class SVM model
+            Detects subtle deviations from normal user behavior
+            Works as a secondary anomaly detector for fine-grained analysis
+
+### 4. user_profiles.pkl
+        Stores enrolled user behavioral profiles
+        Contains baseline keystroke features per user
+        Used to measure personal deviation from normal behavior Purpose of These Files
+
+These models work together to:
+        Detect abnormal user behavior
+        Compare against individual user profiles
+        Enable continuous zero-trust authentication
