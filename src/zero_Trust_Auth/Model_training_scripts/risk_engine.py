@@ -7,8 +7,13 @@ import joblib
 import os
 from datetime import datetime
 from pathlib import Path
+import logging
 
-MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+
+logging.basicConfig(level=logging.INFO)
+
+BASE_DIR =Path(__file__).resolve().parent.parent.parent.parent
+MODELS_DIR = BASE_DIR / "models" / "zero_trust_auth" 
  
 class RiskEngine:
     """
@@ -20,7 +25,7 @@ class RiskEngine:
     This is the KEY NOVELTY of the Zero-Trust Auth layer.
     """
 
-    # ── Context modes and their base thresholds ───────────
+    # ** Context modes and their base thresholds **********─
     # Lower threshold = stricter = easier to trigger step-up auth
     # Higher threshold = more relaxed = harder to trigger
 
@@ -40,11 +45,12 @@ class RiskEngine:
     }
 
     def __init__(self):
-        print("Loading models into Risk Engine...")
-        self.scaler    = joblib.load(os.path.join(MODELS_DIR, "scaler.pkl"))
-        self.iso_forest = joblib.load(os.path.join(MODELS_DIR, "isolation_forest.pkl"))
-        self.oc_svm     = joblib.load(os.path.join(MODELS_DIR, "oneclass_svm.pkl"))
-        self.user_profiles = joblib.load(os.path.join(MODELS_DIR, "user_profiles.pkl"))
+        logging.info("Loading models into Risk Engine...")
+        
+        self.scaler    = self._safe_load("scaler.pkl")
+        self.iso_forest = self._safe_load("isolation_forest.pkl")
+        self.oc_svm     = self._safe_load("oneclass_svm.pkl")
+        self.user_profiles = self._safe_load("user_profiles.pkl")
 
         # Active alerts from other layers - stored in memory
         # { 'network_guardian': timestamp, ... }
@@ -55,7 +61,15 @@ class RiskEngine:
 
         print(f"Risk Engine ready. {len(self.user_profiles)} user profiles loaded.")
 
-    # ── Public method 1: Score a live session ─────────────
+    # Safe loading with error handling
+    def _safe_load(self, filename):
+        path = os.path.join(MODELS_DIR, filename)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Model file missing: {path}")
+        return joblib.load(path)
+    
+
+    # ** Public method 1: Score a live session ************─
     def score_session(self, live_features: list, user_id: int,
                       context: str = 'normal_browsing') -> dict:
         """
@@ -134,7 +148,7 @@ class RiskEngine:
             'risk_percent':       int(final_score * 100),
         }
 
-    # ── Public method 2: Receive alert from another layer ─
+    # ** Public method 2: Receive alert from another layer ─
     def receive_alert(self, source: str, severity: str = 'medium') -> dict:
         """
         Called when another NeuraShield layer sends a threat alert.
@@ -159,7 +173,7 @@ class RiskEngine:
             'effect':   f'Threshold reduced by {self.ALERT_REDUCTIONS[source]:.2f}',
         }
 
-    # ── Public method 3: Clear expired alerts ─────────────
+    # ** Public method 3: Clear expired alerts ************─
     def clear_expired_alerts(self):
         now = datetime.now()
         expired = [
@@ -170,7 +184,7 @@ class RiskEngine:
             del self.active_alerts[src]
             print(f"[ALERT] Expired and cleared: {src}")
 
-    # ── Private helpers ───────────────────────────────────
+    # ** Private helpers **********************************─
 
     def _get_adaptive_threshold(self, context: str) -> float:
         """
@@ -209,13 +223,16 @@ class RiskEngine:
         Returns 0.0 (identical to profile) to 1.0 (very different).
         """
         if user_id not in self.user_profiles:
-            return 0.5   # unknown user - moderate suspicion
+            return 0.8   # unknown user - high suspicion 0.5 modarete)
 
         enrolled = np.array(self.user_profiles[user_id]['features'])
         # Euclidean distance between live and enrolled feature vectors
         distance = float(np.linalg.norm(scaled_features - enrolled))
-        # Normalise: typical max distance across 48 features ~= 15
-        normalised = np.clip(distance / 15.0, 0.0, 1.0)
+
+        # dynamic distance Normalise
+        max_possible_distance = len(scaled_features) * 3.0   # safe upper bound
+        normalised = np.clip(distance / max_possible_distance, 0.0, 1.0)
+        
         return float(normalised)
 
     def _normalise_if_score(self, raw_score: float) -> float:
@@ -258,7 +275,7 @@ class RiskEngine:
         else:              return 'high'
 
 
-# ── Quick test when run directly ─────────────────────────
+# ** Quick test when run directly ************************─
 if __name__ == "__main__":
     engine = RiskEngine()
 

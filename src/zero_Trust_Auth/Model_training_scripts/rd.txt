@@ -8,7 +8,7 @@
     - > The novelty. 
     A single Python class that takes a model score + current context mode + any cross-layer alerts and outputs a final risk score 0.0–1.0 with an adaptive threshold.
 
-  
+ 
   4 tests prove:
 
 Test 1→3: Same user, same behaviour, threshold drops from 0.65 → 0.40 → 0.30 as context tightens. 

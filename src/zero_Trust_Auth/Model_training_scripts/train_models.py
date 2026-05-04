@@ -11,28 +11,29 @@ from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
+from pathlib import Path
 
-# ── Config ────────────────────────────────────────────────
-DATA_FILE   = "user_behavioral_profiles_combined.csv"
-MODELS_DIR  = "models"
+# ** Config ************************************************
+DATA_FILE   =  Path(__file__).resolve().parent.parent / "user_behavioral_profiles_combined.csv"
+MODELS_DIR  = Path(__file__).resolve().parent.parent.parent.parent / "models" / "zero_trust_auth"
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 # Features to use - all 48 columns except 'user'
 EXCLUDE_COLS = ['user']
 
-# ── Load data ─────────────────────────────────────────────
+# ** Load data ********************************************─
 print("Loading combined behavioral profiles...")
 df = pd.read_csv(DATA_FILE)
 print(f"Shape: {df.shape}")
 
 feature_cols = [c for c in df.columns if c not in EXCLUDE_COLS]
-X = df[feature_cols].values
+X = df[feature_cols].fillna(0).values   
 users = df['user'].values
 
 print(f"Features: {len(feature_cols)}")
 print(f"Users: {len(users)}")
 
-# ── Step 1: Scale features ────────────────────────────────
+# ** Step 1: Scale features ********************************
 # StandardScaler: transforms each feature to mean=0, std=1
 # This is critical for One-Class SVM - it's distance-based so scale matters
 # Isolation Forest doesn't strictly need it but it helps consistency
@@ -43,7 +44,7 @@ X_scaled = scaler.fit_transform(X)
 joblib.dump(scaler, os.path.join(MODELS_DIR, "scaler.pkl"))
 print("Saved: scaler.pkl")
 
-# ── Step 2: Train Isolation Forest ────────────────────────
+# ** Step 2: Train Isolation Forest ************************
 # contamination=0.05 means we expect ~5% of sessions to be anomalous
 # n_estimators=200 means 200 trees - more = more accurate, slower to train
 # random_state=42 makes results reproducible
@@ -70,7 +71,7 @@ print(f"  Score mean:  {if_scores.mean():.3f} (more negative = more unusual)")
 joblib.dump(iso_forest, os.path.join(MODELS_DIR, "isolation_forest.pkl"))
 print("Saved: isolation_forest.pkl")
 
-# ── Step 3: Train One-Class SVM ───────────────────────────
+# ** Step 3: Train One-Class SVM **************************─
 # nu=0.05 - similar to contamination, expect 5% outliers
 # kernel='rbf' - radial basis function, handles non-linear boundaries
 # gamma='scale' - auto-calculates best gamma from data
@@ -93,7 +94,7 @@ print(f"  Score range: {svm_scores.min():.3f} to {svm_scores.max():.3f}")
 joblib.dump(oc_svm, os.path.join(MODELS_DIR, "oneclass_svm.pkl"))
 print("Saved: oneclass_svm.pkl")
 
-# ── Step 4: Save per-user profiles ───────────────────────
+# ** Step 4: Save per-user profiles **********************─
 # This is used during live sessions - compare incoming features
 # against the specific enrolled user's profile vector
 print("\nSaving per-user profiles...")
@@ -110,7 +111,7 @@ for i, uid in enumerate(users):
 joblib.dump(user_profiles, os.path.join(MODELS_DIR, "user_profiles.pkl"))
 print(f"Saved: user_profiles.pkl ({len(user_profiles)} users)")
 
-# ── Step 5: Model summary ──────────────────
+# ** Step 5: Model summary ******************
 print("\n" + "="*55)
 print("MODEL TRAINING COMPLETE - SUMMARY")
 print("="*55)
