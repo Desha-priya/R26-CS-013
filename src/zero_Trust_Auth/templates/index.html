@@ -3,337 +3,735 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeuraShield - Zero-Trust Auth Layer</title>
+<title>NeuraShield ++ Zero-Trust Auth Layer</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
-  header { background: #1a1d2e; border-bottom: 1px solid #2d3148; padding: 16px 32px; display: flex; align-items: center; gap: 16px; }
-  header h1 { font-size: 18px; font-weight: 600; color: #a78bfa; }
-  header span { font-size: 13px; color: #64748b; }
-  .badge { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 3px 10px; font-size: 12px; color: #94a3b8; }
-  .badge.green { border-color: #16a34a; color: #4ade80; background: #052e16; }
-  .badge.red   { border-color: #dc2626; color: #f87171; background: #1f0707; }
-  .badge.amber { border-color: #d97706; color: #fbbf24; background: #1c1007; }
-  main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 32px; max-width: 1200px; }
-  .card { background: #1a1d2e; border: 1px solid #2d3148; border-radius: 12px; padding: 20px; }
-  .card h2 { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
-  .full-width { grid-column: 1 / -1; }
-  select, button { font-family: inherit; font-size: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f1117; color: #e2e8f0; padding: 8px 12px; }
-  button { cursor: pointer; background: #4f46e5; border-color: #4f46e5; color: white; font-weight: 500; transition: background .15s; }
-  button:hover { background: #4338ca; }
-  button.danger  { background: #dc2626; border-color: #dc2626; }
-  button.amber   { background: #d97706; border-color: #d97706; }
-  button.outline { background: transparent; border-color: #334155; color: #94a3b8; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-  label { font-size: 13px; color: #64748b; }
-
-  /* Risk gauge */
-  .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .gauge-arc { position: relative; width: 180px; height: 100px; overflow: hidden; }
-  .gauge-arc svg { width: 180px; height: 180px; position: absolute; top: 0; left: 0; }
-  #gauge-value { font-size: 36px; font-weight: 700; margin-top: 8px; }
-  #gauge-label { font-size: 13px; color: #64748b; }
-  #decision-badge { margin-top: 6px; }
-
-  /* Score breakdown */
-  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
-  .score-row:last-child { border-bottom: none; }
-  .score-row .label { color: #64748b; }
-  .score-row .val   { font-weight: 500; font-family: monospace; }
-
-  /* Alert panel */
-  .alert-btn { width: 100%; margin-bottom: 8px; text-align: left; padding: 10px 14px; border-radius: 8px; }
-  .alert-active { background: #1f0707; border-color: #dc2626; color: #f87171; }
-
-  /* Log */
-  #log { font-size: 12px; font-family: monospace; max-height: 200px; overflow-y: auto; background: #0a0c14; border-radius: 8px; padding: 10px; }
-  .log-entry { padding: 3px 0; border-bottom: 1px solid #1a1d2e; color: #64748b; }
-  .log-entry.high   { color: #f87171; }
-  .log-entry.medium { color: #fbbf24; }
-  .log-entry.low    { color: #4ade80; }
-
-  /* Step-up auth modal */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: #1a1d2e; border: 2px solid #dc2626; border-radius: 16px; padding: 32px; text-align: center; max-width: 360px; }
-  .modal h2 { color: #f87171; margin-bottom: 8px; }
-  .modal p  { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
-  .modal-btns { display: flex; gap: 10px; justify-content: center; }
-
-  .threshold-bar { height: 8px; background: #1e293b; border-radius: 4px; margin: 8px 0; position: relative; }
-  .threshold-fill { height: 8px; border-radius: 4px; transition: width .5s, background .5s; }
-  .threshold-marker { position: absolute; top: -4px; width: 2px; height: 16px; background: white; border-radius: 2px; transition: left .5s; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
+header{background:#1a1d2e;border-bottom:1px solid #2d3148;padding:14px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:18px;font-weight:700;color:#a78bfa}
+header span{font-size:13px;color:#64748b}
+.badge{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:3px 10px;font-size:12px;color:#94a3b8}
+.badge.green{border-color:#16a34a;color:#4ade80;background:#052e16}
+.badge.red{border-color:#dc2626;color:#f87171;background:#1f0707}
+.badge.amber{border-color:#d97706;color:#fbbf24;background:#1c1007}
+.tabs{display:flex;gap:4px;padding:16px 28px 0;border-bottom:1px solid #2d3148}
+.tab{padding:8px 20px;font-size:14px;cursor:pointer;border-radius:8px 8px 0 0;color:#64748b;background:transparent;border:1px solid transparent;border-bottom:none;transition:all .15s}
+.tab.active{background:#1a1d2e;color:#e2e8f0;border-color:#2d3148}
+.tab-content{display:none;padding:20px 28px}
+.tab-content.active{display:grid}
+#tab-replay{grid-template-columns:1fr 1fr;gap:18px}
+#tab-live{grid-template-columns:1fr 1fr;gap:18px}
+.card{background:#1a1d2e;border:1px solid #2d3148;border-radius:12px;padding:18px}
+.card h2{font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.full{grid-column:1/-1}
+select{font-family:inherit;font-size:14px;border-radius:8px;border:1px solid #334155;background:#0f1117;color:#e2e8f0;padding:8px 12px;width:100%;margin-bottom:8px}
+button{font-family:inherit;font-size:14px;border-radius:8px;border:1px solid #4f46e5;background:#4f46e5;color:white;font-weight:500;padding:9px 16px;cursor:pointer;transition:background .15s}
+button:hover{background:#4338ca}
+button.danger{background:#dc2626;border-color:#dc2626}
+button.green{background:#16a34a;border-color:#16a34a}
+button.amber{background:#d97706;border-color:#d97706}
+button.outline{background:transparent;border-color:#334155;color:#94a3b8}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.gauge-arc{position:relative;width:160px;height:90px;overflow:hidden}
+.gauge-arc svg{width:160px;height:160px;position:absolute;top:0;left:0}
+.gauge-value{font-size:32px;font-weight:700}
+.gauge-label{font-size:12px;color:#64748b;text-align:center}
+.score-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e293b;font-size:13px}
+.score-row:last-child{border-bottom:none}
+.score-row .lbl{color:#64748b}
+.score-row .val{font-family:monospace;font-weight:500}
+.tbar-wrap{width:100%;margin-top:12px}
+.tbar{height:8px;background:#1e293b;border-radius:4px;position:relative}
+.tbar-fill{height:8px;border-radius:4px;transition:width .5s,background .5s}
+.tbar-mark{position:absolute;top:-4px;width:2px;height:16px;background:white;border-radius:2px;transition:left .5s}
+.alert-btn{width:100%;text-align:left;padding:10px 14px;margin-bottom:8px;border-radius:8px;font-size:13px}
+.alert-btn.active{background:#1f0707;border-color:#dc2626;color:#f87171}
+#log,#log-live{font-size:12px;font-family:monospace;max-height:180px;overflow-y:auto;background:#0a0c14;border-radius:8px;padding:10px}
+.log-e{padding:3px 0;border-bottom:1px solid #1a1d2e;color:#64748b}
+.log-e.high{color:#f87171}
+.log-e.medium{color:#fbbf24}
+.log-e.low{color:#4ade80}
+#enroll-box,#monitor-box{width:100%;height:110px;background:#0a0c14;border:2px solid #334155;border-radius:8px;color:#e2e8f0;font-size:15px;font-family:monospace;padding:12px;resize:none;line-height:1.6;transition:border-color .3s}
+#enroll-box:focus,#monitor-box:focus{outline:none;border-color:#4f46e5}
+#enroll-box.done{border-color:#16a34a}
+#monitor-box.active{border-color:#a78bfa}
+.prog-bar{height:6px;background:#1e293b;border-radius:4px;margin:6px 0}
+.prog-fill{height:6px;border-radius:4px;background:#4f46e5;transition:width .3s}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#1a1d2e;border:2px solid #dc2626;border-radius:16px;padding:32px;text-align:center;max-width:360px}
+.modal h2{color:#f87171;margin-bottom:8px}
+.modal p{color:#94a3b8;font-size:14px;margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+.phase-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:8px}
+.phase-1{background:#1e1b4b;color:#a78bfa}
+.phase-2{background:#052e16;color:#4ade80}
 </style>
 </head>
 <body>
 
 <header>
   <h1>NeuraShield</h1>
-  <span>Zero-Trust Auth &amp; Behavioral Biometrics</span>
-  <span class="badge green" id="status-badge">● System Online</span>
+  <span>Zero-Trust Auth &amp; Behavioral Biometrics Layer</span>
+  <span class="badge green">● System Online</span>
   <span class="badge" id="alert-count-badge">0 active alerts</span>
+  <span class="badge" id="live-status-badge" style="display:none"></span>
 </header>
 
-<main>
 
-  <!-- CONTROL PANEL -->
+  <div class="card full">
+  <h2>System Explanation (Research Model)</h2>
+  <p style="font-size:13px;color:#94a3b8;line-height:1.6">
+    NeuraShield uses <b>behavioral biometrics</b> (typing rhythm, mouse dynamics, scroll behavior)
+    to continuously authenticate users. The system does NOT analyze text content.
+  </p>
+
+  <div class="score-row"><span class="lbl">Input type</span><span class="val">Timing signals only</span></div>
+  <div class="score-row"><span class="lbl">Feature space</span><span class="val">48-dimensional behavioral vector</span></div>
+  <div class="score-row"><span class="lbl">Models</span><span class="val">Isolation Forest + One-Class SVM</span></div>
+  <div class="score-row"><span class="lbl">Decision system</span><span class="val">Adaptive risk thresholding</span></div>
+  <div class="score-row"><span class="lbl">Response</span><span class="val">Allow / Warn / Step-up authentication</span></div>
+  <div class="score-row">
+  <span class="lbl">Decision logic</span>
+  <span class="val">ML risk + context + alerts</span>
+</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('replay')">📊 Dataset Replay Demo</div>
+  <div class="tab" onclick="switchTab('live')">⌨ Live Enrollment &amp; Monitor</div>
+</div>
+
+<!-- ═══ TAB 1 — DATASET REPLAY ═══ -->
+<div class="tab-content active" id="tab-replay">
+
   <div class="card">
     <h2>Session Control</h2>
-    <div class="row">
-      <label>User:</label>
-      <select id="user-select"><option>Loading...</option></select>
-    </div>
-    <div class="row">
-      <label>Context:</label>
-      <select id="context-select">
-        <option value="normal_browsing">Normal browsing</option>
-        <option value="sensitive_access">Sensitive file access</option>
-        <option value="financial">Financial operation</option>
-        <option value="under_attack">Under attack</option>
-      </select>
-    </div>
-    <div class="row">
-      <button onclick="replayUser()">▶ Replay from dataset</button>
+    <label style="font-size:13px;color:#64748b">Select User</label>
+    <select id="user-select"></select>
+    <label style="font-size:13px;color:#64748b">Context</label>
+    <select id="context-select">
+      <option value="normal_browsing">Normal browsing</option>
+      <option value="sensitive_access">Sensitive file access</option>
+      <option value="financial">Financial operation</option>
+      <option value="under_attack">Under attack</option>
+    </select>
+    <div class="btn-row">
+      <button onclick="replayUser()">▶ Replay normal user</button>
       <button class="amber" onclick="replayAnomalyUser()">⚠ Replay anomaly user</button>
     </div>
-    <div class="row">
-      <button class="outline" onclick="resetDemo()">↺ Reset demo</button>
+    <div class="btn-row">
+      <button class="outline" onclick="resetDemo()">↺ Reset</button>
     </div>
-    <div style="margin-top:12px; padding-top:12px; border-top:1px solid #1e293b;">
-      <div class="score-row"><span class="label">IF score</span><span class="val" id="if-score">-</span></div>
-      <div class="score-row"><span class="label">SVM score</span><span class="val" id="svm-score">-</span></div>
-      <div class="score-row"><span class="label">Personal deviation</span><span class="val" id="dev-score">-</span></div>
-      <div class="score-row"><span class="label">Adaptive threshold</span><span class="val" id="threshold-val">-</span></div>
-      <div class="score-row"><span class="label">SVM activated</span><span class="val" id="svm-used">-</span></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #1e293b">
+      <div class="score-row"><span class="lbl">IF score</span><span class="val" id="if-score">—</span></div>
+      <div class="score-row"><span class="lbl">SVM score</span><span class="val" id="svm-score">—</span></div>
+      <div class="score-row"><span class="lbl">Personal deviation</span><span class="val" id="dev-score">—</span></div>
+      <div class="score-row"><span class="lbl">Sliding window size</span><span class="val" id="win-score">—</span></div>
+      <div class="score-row"><span class="lbl">Adaptive threshold</span><span class="val" id="threshold-val">—</span></div>
+      <div class="score-row"><span class="lbl">SVM activated</span><span class="val" id="svm-used">—</span></div>
     </div>
   </div>
 
-  <!-- RISK GAUGE -->
-  <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+  <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
     <h2>Live Risk Score</h2>
     <div class="gauge-wrap">
       <div class="gauge-arc">
-        <svg viewBox="0 0 180 180">
-          <path d="M20 140 A70 70 0 0 1 160 140" fill="none" stroke="#1e293b" stroke-width="16" stroke-linecap="round"/>
-          <path id="gauge-arc" d="M20 140 A70 70 0 0 1 160 140" fill="none" stroke="#4ade80" stroke-width="16" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220" style="transition:stroke-dashoffset .6s, stroke .6s;"/>
+        <svg viewBox="0 0 160 160">
+          <path d="M16 124 A64 64 0 0 1 144 124" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>
+          <path id="gauge-arc" d="M16 124 A64 64 0 0 1 144 124" fill="none" stroke="#4ade80" stroke-width="14" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201" style="transition:stroke-dashoffset .6s,stroke .6s"/>
         </svg>
       </div>
-      <div id="gauge-value" style="color:#4ade80">0%</div>
-      <div id="gauge-label">Waiting for session data</div>
-      <div id="decision-badge" class="badge">-</div>
+      <div class="gauge-value" id="gauge-value" style="color:#4ade80">0%</div>
+      <div class="gauge-label" id="gauge-label">Awaiting session data</div>
+      <div class="badge" id="decision-badge" style="margin-top:6px">—</div>
     </div>
-    <div style="width:100%; margin-top:16px;">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;">
-        <span>Risk score</span><span id="thresh-label">Threshold: -</span>
+    <div class="tbar-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px">
+        <span>Risk score</span><span id="thresh-label">Threshold: —</span>
       </div>
-      <div class="threshold-bar">
-        <div class="threshold-fill" id="risk-fill" style="width:0%;background:#4ade80;"></div>
-        <div class="threshold-marker" id="thresh-marker" style="left:65%;"></div>
+      <div class="tbar">
+        <div class="tbar-fill" id="risk-fill" style="width:0%;background:#4ade80"></div>
+        <div class="tbar-mark" id="thresh-mark" style="left:65%"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:2px;">
-        <span>0 - safe</span><span>1.0 - danger</span>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:2px">
+        <span>0 — safe</span><span>1.0 — danger</span>
       </div>
     </div>
   </div>
 
-  <!-- CROSS-LAYER ALERTS -->
   <div class="card">
-    <h2>Cross-Layer Alerts...</h2>
-    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">
-      Trigger an alert from another NeuraShield layer. Watch the threshold tighten instantly.
-    </p>
-    <button class="alert-btn danger" id="btn-ng" onclick="sendAlert('network_guardian')">
-      ⚡ Network Guardian - intrusion detected
-    </button>
-    <button class="alert-btn danger" id="btn-rk" onclick="sendAlert('ransomware_killer')">
-      ☣ Ransomware Killer - endpoint threat
-    </button>
-    <button class="alert-btn danger" id="btn-ct" onclick="sendAlert('content_threat_detection')">
-      👁 Content Threat - deepfake/phishing detected
-    </button>
-    <button class="outline" style="width:100%;margin-top:8px;" onclick="clearAllAlerts()">
-      Clear all alerts
-    </button>
+    <h2>Cross-Layer Alerts — Novelty Demo</h2>
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px">Trigger alerts from other NeuraShield layers. Watch the threshold tighten instantly.</p>
+    <button class="alert-btn danger" id="btn-ne" onclick="sendAlert('network_guardian')">⚡ Network Guardian — intrusion detected</button>
+    <button class="alert-btn danger" id="btn-ra" onclick="sendAlert('ransomware_killer')">☣ Ransomware Killer — endpoint threat</button>
+    <button class="alert-btn danger" id="btn-co" onclick="sendAlert('content_threat_detection')">👁 Content Threat — deepfake detected</button>
+    <button class="outline" style="width:100%;margin-top:6px" onclick="clearAllAlerts()">Clear all alerts</button>
   </div>
 
-  <!-- SESSION LOG -->
   <div class="card">
     <h2>Session Event Log</h2>
-    <div id="log"><div class="log-entry">System ready. Run a replay to begin.</div></div>
+    <div id="log"><div class="log-e">System ready.</div></div>
   </div>
 
-</main>
+</div>
+
+<!-- ═══ TAB 2 — LIVE ENROLLMENT + MONITOR ═══ -->
+<div class="tab-content" id="tab-live">
+
+  <!-- Phase 1: Enrollment -->
+  <div class="card">
+    <h2>Phase 1 — Enrollment <span class="phase-label phase-1" id="phase-badge">NOT ENROLLED</span></h2>
+    <p style="font-size:13px;color:#94a3b8;margin-bottom:10px">
+      Type naturally below. We capture your keystroke <strong style="color:#a78bfa">timing patterns</strong> — not what you type.
+      Need <strong style="color:#a78bfa" id="target-label">80</strong> keystrokes minimum.
+    </p>
+
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+      <span style="color:#64748b">Keystrokes captured</span>
+      <span id="ks-count" style="color:#a78bfa;font-weight:600">0 / 80</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="enroll-progress" style="width:0%"></div></div>
+    <textarea id="enroll-box" placeholder="Type anything here naturally... sentences, random words, anything. The system only sees your timing, not your words."></textarea>
+
+    <div class="btn-row" style="margin-top:8px">
+      <button class="green" id="enroll-btn" onclick="doEnroll()" disabled>Build My Profile</button>
+      <button class="outline" onclick="resetEnrollment()">↺ Clear &amp; restart</button>
+    </div>
+    <div id="enroll-msg" style="font-size:13px;margin-top:6px;min-height:20px"></div>
+
+    <!-- Enrollment stats -->
+    <div id="enroll-stats" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1e293b">
+      <div class="score-row"><span class="lbl">Avg dwell time</span><span class="val" id="stat-dwell">—</span></div>
+      <div class="score-row"><span class="lbl">Avg flight time</span><span class="val" id="stat-flight">—</span></div>
+      <div class="score-row"><span class="lbl">Overlap rate</span><span class="val" id="stat-overlap">—</span></div>
+      <div class="score-row"><span class="lbl">Total keystrokes</span><span class="val" id="stat-ks">—</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 2: Live risk gauge -->
+  <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <h2>Phase 2 — Live Risk Score</h2>
+    <div class="gauge-wrap">
+      <div class="gauge-arc">
+        <svg viewBox="0 0 160 160">
+          <path d="M16 124 A64 64 0 0 1 144 124" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>
+          <path id="gauge-arc-live" d="M16 124 A64 64 0 0 1 144 124" fill="none" stroke="#4ade80" stroke-width="14" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201" style="transition:stroke-dashoffset .6s,stroke .6s"/>
+        </svg>
+      </div>
+      <div class="gauge-value" id="gauge-value-live" style="color:#4ade80">—</div>
+      <div class="gauge-label" id="gauge-label-live">Enroll first, then type below</div>
+      <div class="badge" id="decision-badge-live" style="margin-top:6px">—</div>
+    </div>
+    <div class="tbar-wrap">
+      <div class="tbar">
+        <div class="tbar-fill" id="risk-fill-live" style="width:0%;background:#4ade80"></div>
+        <div class="tbar-mark" id="thresh-mark-live" style="left:65%"></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #1e293b;width:100%">
+      <div class="score-row"><span class="lbl">IF score</span><span class="val" id="if-live">—</span></div>
+      <div class="score-row"><span class="lbl">SVM score</span><span class="val" id="svm-live">—</span></div>
+      <div class="score-row"><span class="lbl">Personal deviation</span><span class="val" id="dev-live">—</span></div>
+      <div class="score-row"><span class="lbl">Adaptive threshold</span><span class="val" id="thresh-live">—</span></div>
+      <div class="score-row"><span class="lbl">Keystrokes scored</span><span class="val" id="ks-scored">0</span></div>
+    </div>
+  </div>
+
+  <!-- Monitor typing area -->
+  <div class="card full">
+    <h2>
+      Live Monitor Typing Area
+      <span class="phase-label phase-2" id="monitor-status-label" style="display:none">MONITORING ACTIVE</span>
+    </h2>
+    <div class="btn-row" style="margin-bottom:10px">
+      <label style="font-size:13px;color:#64748b;align-self:center">Context:</label>
+      <select id="live-context" style="width:auto;margin:0" onchange="liveContext=this.value">
+        <option value="normal_browsing">Normal browsing</option>
+        <option value="sensitive_access">Sensitive file access</option>
+        <option value="financial">Financial operation</option>
+      </select>
+    </div>
+    <textarea id="monitor-box"
+      placeholder="Complete enrollment first (Phase 1). Then type here to be monitored live. Score updates every 20 keystrokes.&#10;&#10;TIP: Ask your supervisor to type here — their different timing will raise the risk score!"
+      disabled></textarea>
+    <p style="font-size:12px;color:#475569;margin-top:6px">
+      Score updates every <strong>20 keystrokes</strong>. The system scores your typing rhythm against your enrolled profile.
+    </p>
+    <div id="log-live" style="margin-top:12px"><div class="log-e">Waiting for enrollment to complete...</div></div>
+  </div>
+
+</div>
 
 <!-- Step-up auth modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2>⚠ Identity Verification Required</h2>
     <p>Anomalous behaviour detected. Please verify your identity to continue.</p>
-    <div style="background:#0a0c14;border-radius:8px;padding:16px;margin-bottom:16px;font-size:13px;color:#64748b;">
-      Risk score exceeded adaptive threshold.<br>
-      <strong style="color:#f87171;" id="modal-score"></strong>
+    <div style="background:#0a0c14;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#64748b">
+      <span id="modal-score"></span>
     </div>
     <div class="modal-btns">
-      <button onclick="passAuth()">✓ Verify (pass)</button>
-      <button class="danger" onclick="failAuth()">✕ Fail → Lock session</button>
+      <button class="green" onclick="passAuth()">✓ Verified — Continue</button>
+      <button class="danger" onclick="failAuth()">✕ Failed — Lock Session</button>
     </div>
   </div>
 </div>
 
 <script>
-let anomalyUsers = [];
-let currentUser  = 1;
+// ═══════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════
+const ENROLL_TARGET = 80;
+const SCORE_EVERY   = 20;
 
-// ── Load users into dropdown ──────────────────────────────
-async function loadUsers() {
-  const r = await fetch('/api/users');
-  const d = await r.json();
-  const sel = document.getElementById('user-select');
-  sel.innerHTML = d.users.map(u => `<option value="${u}">User ${u}</option>`).join('');
-  currentUser = d.users[0];
+let anomalyUsers   = [];
+let enrolledUID    = null;
+let liveContext    = 'normal_browsing';
+let ksScored       = 0;
 
-  // Also load anomaly users
-  const ar = await fetch('/api/anomaly-users');
-  const ad = await ar.json();
-  anomalyUsers = ad.anomaly_users.map(x => x.user_id);
-  addLog(`System ready. ${d.total} enrolled users. ${anomalyUsers.length} anomaly users detected.`, 'low');
+// Enrollment keystroke capture
+let enrollKS       = [];   // [{dwell, flight}]
+let enrollPressT   = {};   // {code: timestamp}
+let enrollLastUp   = null;
+
+// Monitor keystroke capture
+let monitorKS      = [];
+let monitorPressT  = {};
+let monitorLastUp  = null;
+
+// ═══════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['replay','live'][i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ── Replay normal user from dataset ──────────────────────
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init() {
+  try {
+    const r = await fetch('/api/users');
+    const d = await r.json();
+    const sel = document.getElementById('user-select');
+    sel.innerHTML = d.users.map(u => `<option value="${u}">User ${u}</option>`).join('');
+    addLog(`System ready. ${d.total} enrolled users.`, 'low');
+  } catch(e) {
+    addLog('Error loading users: ' + e, 'high');
+  }
+
+  try {
+    const ar = await fetch('/api/anomaly-users');
+    const ad = await ar.json();
+    anomalyUsers = ad.anomaly_users.map(x => x.user_id);
+    addLog(`${anomalyUsers.length} anomaly users flagged by Isolation Forest.`, 'low');
+  } catch(e) {
+    addLog('Error loading anomaly users.', 'high');
+  }
+
+  setupEnrollCapture();
+  setupMonitorCapture();
+}
+
+// ═══════════════════════════════════════════
+// ENROLLMENT CAPTURE
+// ═══════════════════════════════════════════
+function setupEnrollCapture() {
+  const box = document.getElementById('enroll-box');
+
+  box.addEventListener('keydown', e => {
+    // Record press timestamp per key code
+    enrollPressT[e.code] = performance.now();
+  });
+
+  box.addEventListener('keyup', e => {
+    const upTime   = performance.now();
+    const pressTime = enrollPressT[e.code];
+    if (pressTime === undefined) return;
+
+    const dwell  = upTime - pressTime;                              // ms held
+    const flight = enrollLastUp ? (pressTime - enrollLastUp) : 0;  // ms since last release
+    enrollLastUp = upTime;
+
+    // Only record printable-ish keys (filter modifier-only events)
+    if (dwell > 0 && dwell < 2000) {
+      enrollKS.push({ dwell, flight: Math.max(0, flight) });
+      updateEnrollUI();
+    }
+    delete enrollPressT[e.code];
+  });
+}
+
+function updateEnrollUI() {
+  const n   = enrollKS.length;
+  const pct = Math.min(100, (n / ENROLL_TARGET) * 100);
+  document.getElementById('ks-count').textContent          = `${n} / ${ENROLL_TARGET}`;
+  document.getElementById('enroll-progress').style.width   = pct + '%';
+  document.getElementById('enroll-btn').disabled           = n < ENROLL_TARGET;
+
+  if (n >= ENROLL_TARGET) {
+    setMsg('enroll-msg', `✓ ${n} keystrokes captured. Ready to build your profile!`, '#4ade80');
+  } else {
+    setMsg('enroll-msg', `Keep typing... ${ENROLL_TARGET - n} more keystrokes needed.`, '#64748b');
+  }
+}
+
+async function doEnroll() {
+  if (enrollKS.length < ENROLL_TARGET) return;
+
+  setMsg('enroll-msg', 'Building behavioral profile...', '#a78bfa');
+  document.getElementById('enroll-btn').disabled = true;
+
+  const features = computeFeatures(enrollKS);
+
+  // Show stats to user
+  document.getElementById('enroll-stats').style.display = 'block';
+  document.getElementById('stat-dwell').textContent   = (features[0] * 1000).toFixed(1) + ' ms';
+  document.getElementById('stat-flight').textContent  = (features[5] * 1000).toFixed(1) + ' ms';
+  document.getElementById('stat-overlap').textContent = (features[10] * 100).toFixed(1) + '%';
+  document.getElementById('stat-ks').textContent      = enrollKS.length;
+
+  try {
+    const r = await fetch('/api/enroll', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ user_id: 9999, features })
+    });
+
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error(err);
+    }
+
+    const d = await r.json();
+
+    if (d.status === 'enrolled') {
+      enrolledUID = 9999;
+      document.getElementById('enroll-box').classList.add('done');
+      document.getElementById('phase-badge').textContent    = '✓ ENROLLED';
+      document.getElementById('phase-badge').className      = 'phase-label phase-2';
+      document.getElementById('monitor-box').disabled       = false;
+      document.getElementById('monitor-box').classList.add('active');
+      document.getElementById('monitor-status-label').style.display = 'inline';
+      document.getElementById('live-status-badge').textContent      = '● Live user enrolled';
+      document.getElementById('live-status-badge').className        = 'badge green';
+      document.getElementById('live-status-badge').style.display    = 'inline-block';
+      setMsg('enroll-msg', `✓ Profile built! IF=${d.if_score} | SVM=${d.svm_score}. Now type in the monitor area.`, '#4ade80');
+      addLogLive('✓ Enrollment complete. Monitoring active — type in the area below.', 'low');
+    }
+  } catch(e) {
+    setMsg('enroll-msg', 'Enrollment failed: ' + e.message, '#f87171');
+    document.getElementById('enroll-btn').disabled = false;
+    console.error('Enroll error:', e);
+  }
+}
+
+function resetEnrollment() {
+  enrollKS     = [];
+  enrollPressT = {};
+  enrollLastUp = null;
+  enrolledUID  = null;
+  document.getElementById('enroll-box').value   = '';
+  document.getElementById('enroll-box').classList.remove('done');
+  document.getElementById('enroll-progress').style.width = '0%';
+  document.getElementById('ks-count').textContent        = `0 / ${ENROLL_TARGET}`;
+  document.getElementById('enroll-btn').disabled         = true;
+  document.getElementById('enroll-stats').style.display  = 'none';
+  document.getElementById('phase-badge').textContent     = 'NOT ENROLLED';
+  document.getElementById('phase-badge').className       = 'phase-label phase-1';
+  document.getElementById('monitor-box').disabled        = true;
+  document.getElementById('monitor-box').classList.remove('active');
+  document.getElementById('monitor-status-label').style.display = 'none';
+  setMsg('enroll-msg', '', '');
+  monitorKS    = [];
+  ksScored     = 0;
+}
+
+// ═══════════════════════════════════════════
+// MONITOR CAPTURE
+// ═══════════════════════════════════════════
+function setupMonitorCapture() {
+  const box = document.getElementById('monitor-box');
+
+  box.addEventListener('keydown', e => {
+    monitorPressT[e.code] = performance.now();
+  });
+
+  box.addEventListener('keyup', async e => {
+    if (!enrolledUID) return;
+
+    const upTime    = performance.now();
+    const pressTime = monitorPressT[e.code];
+    if (pressTime === undefined) return;
+
+    const dwell  = upTime - pressTime;
+    const flight = monitorLastUp ? (pressTime - monitorLastUp) : 0;
+    monitorLastUp = upTime;
+
+    if (dwell > 0 && dwell < 2000) {
+      monitorKS.push({ dwell, flight: Math.max(0, flight) });
+      ksScored++;
+      document.getElementById('ks-scored').textContent = ksScored;
+
+      // Score every SCORE_EVERY keystrokes
+      if (monitorKS.length % SCORE_EVERY === 0) {
+        await scoreLive();
+      }
+    }
+    delete monitorPressT[e.code];
+  });
+}
+
+async function scoreLive() {
+  if (!enrolledUID || monitorKS.length < 10) return;
+
+  const features = computeFeatures(monitorKS);
+  const ctx      = document.getElementById('live-context').value;
+
+  try {
+    const r = await fetch('/api/score', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        user_id:  enrolledUID,
+        features: features,   // 15 features — padded inside API
+        context:  ctx
+      })
+    });
+
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error(err);
+      return;
+    }
+
+    const d = await r.json();
+    displayLive(d);
+    addLogLive(
+      `${ksScored} keys | risk: ${d.risk_percent}% | ${d.decision} | threshold: ${Math.round(d.adaptive_threshold*100)}%`,
+      d.risk_level
+    );
+    if (d.decision === 'step_up_auth') triggerModal(d);
+
+  } catch(e) {
+    addLogLive('Scoring error: ' + e.message, 'high');
+    console.error('Score error:', e);
+  }
+}
+
+// ═══════════════════════════════════════════
+// FEATURE COMPUTATION (browser JS)
+// Must match aggregation script features (15 features, same order)
+// ═══════════════════════════════════════════
+function computeFeatures(keystrokes) {
+  // Convert ms → seconds to match Python training data
+  const dwells  = keystrokes.map(k => k.dwell  / 1000.0);
+  const flights = keystrokes.filter(k => k.flight > 50).map(k => k.flight / 1000.0);
+  // flight > 50ms filter removes same-key repeat artefacts
+
+  const mean = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+  const std  = arr => {
+    if (arr.length < 2) return 0;
+    const m = mean(arr);
+    return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/arr.length);
+  };
+  const median = arr => {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a,b)=>a-b);
+    return s[Math.floor(s.length/2)];
+  };
+
+  const dm = mean(dwells),   ds = std(dwells);
+  const fm = mean(flights),  fs = std(flights);
+
+  // overlap_rate: flight < 0 means next key pressed before previous released
+  // In browser we detect this when flight < 20ms
+  const overlaps = keystrokes.filter(k => k.flight > 0 && k.flight < 20).length;
+  const overlapRate    = keystrokes.length > 0 ? overlaps / keystrokes.length : 0;
+
+  // session_break_rate: pauses > 2 seconds
+  const breaks         = keystrokes.filter(k => k.flight > 2000).length;
+  const sessionBreakRate = keystrokes.length > 0 ? breaks / keystrokes.length : 0;
+
+  const dwell_cv  = dm > 0 ? ds/dm : 0;
+  const flight_cv = fm > 0 ? fs/fm : 0;
+
+  // Return 15 features in EXACT same order as Python aggregation
+  return [
+    dm,                                    // dwell_mean
+    ds,                                    // dwell_std
+    dwells.length ? Math.min(...dwells) : 0, // dwell_min
+    dwells.length ? Math.max(...dwells) : 0, // dwell_max
+    median(dwells),                        // dwell_median
+    fm,                                    // flight_mean
+    fs,                                    // flight_std
+    flights.length ? Math.min(...flights) : 0, // flight_min
+    flights.length ? Math.max(...flights) : 0, // flight_max
+    median(flights),                       // flight_median
+    overlapRate,                           // overlap_rate
+    sessionBreakRate,                      // session_break_rate
+    keystrokes.length,                     // total_keystrokes
+    dwell_cv,                              // dwell_cv
+    flight_cv,                             // flight_cv
+  ];
+}
+
+// ═══════════════════════════════════════════
+// DATASET REPLAY (Tab 1)
+// ═══════════════════════════════════════════
 async function replayUser() {
-  const uid     = parseInt(document.getElementById('user-select').value);
-  const context = document.getElementById('context-select').value;
-  const r = await fetch('/api/replay', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({user_id: uid, context, n_samples: 150})
-  });
-  const d = await r.json();
-  displayResult(d);
-  addLog(`User ${uid} | ${context} | risk: ${d.risk_percent}% | ${d.decision}`, d.risk_level);
+  const uid = parseInt(document.getElementById('user-select').value);
+  const ctx = document.getElementById('context-select').value;
+  try {
+    const r = await fetch('/api/replay', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: uid, context: ctx, n_samples: 150})
+    });
+    const d = await r.json();
+    displayReplay(d);
+    addLog(`User ${uid} | ${ctx} | risk: ${d.risk_percent}% | ${d.decision}`, d.risk_level);
+  } catch(e) { addLog('Replay error: ' + e, 'high'); }
 }
 
-// ── Replay one of the anomaly users ──────────────────────
 async function replayAnomalyUser() {
-  if (anomalyUsers.length === 0) { alert('No anomaly users found'); return; }
-  const uid     = anomalyUsers[Math.floor(Math.random() * anomalyUsers.length)];
-  const context = document.getElementById('context-select').value;
-  const r = await fetch('/api/replay', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({user_id: uid, context, n_samples: 150})
-  });
-  const d = await r.json();
-  displayResult(d);
-  addLog(`⚠ ANOMALY user ${uid} | ${context} | risk: ${d.risk_percent}% | ${d.decision}`, d.risk_level);
-  if (d.decision === 'step_up_auth') triggerStepUpModal(d);
+  if (!anomalyUsers.length) { alert('No anomaly users found'); return; }
+  const uid = anomalyUsers[Math.floor(Math.random() * anomalyUsers.length)];
+  const ctx = document.getElementById('context-select').value;
+  try {
+    const r = await fetch('/api/replay', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: uid, context: ctx, n_samples: 150})
+    });
+    const d = await r.json();
+    displayReplay(d);
+    addLog(`⚠ ANOMALY user ${uid} | risk: ${d.risk_percent}% | ${d.decision}`, d.risk_level);
+    if (d.decision === 'step_up_auth') triggerModal(d);
+  } catch(e) { addLog('Replay error: ' + e, 'high'); }
 }
 
-// ── Send cross-layer alert ────────────────────────────────
+// ═══════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════
 async function sendAlert(source) {
-  const r = await fetch('/api/alert', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({source, severity: 'high'})
+  await fetch('/api/alert', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({source, severity:'high'})
   });
-  const d = await r.json();
-  document.getElementById('btn-' + source.slice(0,2)).classList.add('alert-active');
+  document.getElementById('btn-'+source.slice(0,2)).classList.add('active');
   updateAlertBadge();
-  addLog(`🚨 Alert from ${source} - threshold tightened`, 'high');
+  addLog(`🚨 Alert from ${source} — threshold tightened`, 'high');
 }
 
 async function clearAllAlerts() {
-  for (const src of ['network_guardian','ransomware_killer','content_threat_detection']) {
-    await fetch(`/api/alert/${src}`, {method: 'DELETE'});
-    document.getElementById('btn-' + src.slice(0,2)).classList.remove('alert-active');
+  for (const s of ['network_guardian','ransomware_killer','content_threat_detection']) {
+    await fetch(`/api/alert/${s}`, {method:'DELETE'});
+    document.getElementById('btn-'+s.slice(0,2)).classList.remove('active');
   }
   updateAlertBadge();
-  addLog('All alerts cleared - thresholds restored', 'low');
+  addLog('All alerts cleared — thresholds restored', 'low');
 }
 
 function updateAlertBadge() {
-  fetch('/api/status').then(r => r.json()).then(d => {
+  fetch('/api/status').then(r=>r.json()).then(d=>{
     const n = d.active_alerts.length;
-    const badge = document.getElementById('alert-count-badge');
-    badge.textContent = `${n} active alert${n !== 1 ? 's' : ''}`;
-    badge.className = 'badge ' + (n > 0 ? 'red' : '');
+    const b = document.getElementById('alert-count-badge');
+    b.textContent = `${n} active alert${n!==1?'s':''}`;
+    b.className   = 'badge ' + (n>0?'red':'');
   });
 }
 
-// ── Display result on gauge ───────────────────────────────
-function displayResult(d) {
-  const pct = d.risk_percent;
-  const colors = { low: '#4ade80', medium: '#fbbf24', high: '#f87171' };
-  const color  = colors[d.risk_level] || '#4ade80';
+// ═══════════════════════════════════════════
+// DISPLAY
+// ═══════════════════════════════════════════
+const C = {low:'#4ade80', medium:'#fbbf24', high:'#f87171'};
+const DT = {allow:'✓ Allow', warn:'⚠ Warning', step_up_auth:'🔒 Step-Up Auth'};
+const DC = {allow:'green',   warn:'amber',     step_up_auth:'red'};
 
-  // Gauge arc: 220 = full arc length
-  const offset = 220 - (pct / 100) * 220;
-  document.getElementById('gauge-arc').style.strokeDashoffset = offset;
-  document.getElementById('gauge-arc').style.stroke = color;
-  document.getElementById('gauge-value').textContent = pct + '%';
-  document.getElementById('gauge-value').style.color = color;
-  document.getElementById('gauge-label').textContent =
-    `User ${d.user_id} - ${d.context.replace(/_/g,' ')}`;
-
-  const decisionText = { allow: '✓ Allow', warn: '⚠ Warning', step_up_auth: '🔒 Step-Up Auth' };
-  const decisionClass = { allow: 'green', warn: 'amber', step_up_auth: 'red' };
-  const badge = document.getElementById('decision-badge');
-  badge.textContent = decisionText[d.decision] || d.decision;
-  badge.className   = 'badge ' + (decisionClass[d.decision] || '');
-
-  // Score breakdown
-  document.getElementById('if-score').textContent  = d.if_score ?? '-';
-  document.getElementById('svm-score').textContent = d.svm_score ?? 'not used';
-  document.getElementById('dev-score').textContent = d.personal_deviation ?? '-';
-  document.getElementById('threshold-val').textContent = d.adaptive_threshold;
-  document.getElementById('svm-used').textContent  = d.svm_used ? 'Yes' : 'No';
-
-  // Threshold bar
-  document.getElementById('risk-fill').style.width      = pct + '%';
-  document.getElementById('risk-fill').style.background = color;
-  const threshPct = Math.round(d.adaptive_threshold * 100);
-  document.getElementById('thresh-marker').style.left   = threshPct + '%';
-  document.getElementById('thresh-label').textContent   = `Threshold: ${threshPct}%`;
+function setGauge(arcId, valId, lblId, badgeId, fillId, markId, threshId, d) {
+  const pct = d.risk_percent, color = C[d.risk_level]||'#4ade80';
+  document.getElementById(arcId).style.strokeDashoffset = 201-(pct/100)*201;
+  document.getElementById(arcId).style.stroke = color;
+  document.getElementById(valId).textContent  = pct+'%';
+  document.getElementById(valId).style.color  = color;
+  if (lblId) document.getElementById(lblId).textContent =
+    `User ${d.user_id} — ${(d.context||'').replace(/_/g,' ')}`;
+  const b = document.getElementById(badgeId);
+  b.textContent = DT[d.decision]||d.decision;
+  b.className   = 'badge '+(DC[d.decision]||'');
+  const tp = Math.round(d.adaptive_threshold*100);
+  document.getElementById(fillId).style.width      = pct+'%';
+  document.getElementById(fillId).style.background = color;
+  document.getElementById(markId).style.left       = tp+'%';
+  if (threshId) document.getElementById(threshId).textContent = `Threshold: ${tp}%`;
 }
 
-// ── Step-up auth modal ────────────────────────────────────
-function triggerStepUpModal(d) {
+function displayReplay(d) {
+  setGauge('gauge-arc','gauge-value','gauge-label','decision-badge','risk-fill','thresh-mark','thresh-label',d);
+  document.getElementById('if-score').textContent    = d.if_score??'—';
+  document.getElementById('svm-score').textContent   = d.svm_score??'not used';
+  document.getElementById('dev-score').textContent   = d.personal_deviation??'—';
+  document.getElementById('win-score').textContent   = d.window_size??'—';
+  document.getElementById('threshold-val').textContent = d.adaptive_threshold;
+  document.getElementById('svm-used').textContent    = d.svm_used?'Yes ✓':'No';
+}
+
+function displayLive(d) {
+  setGauge('gauge-arc-live','gauge-value-live','gauge-label-live','decision-badge-live','risk-fill-live','thresh-mark-live',null,d);
+  document.getElementById('if-live').textContent   = d.if_score??'—';
+  document.getElementById('svm-live').textContent  = d.svm_score??'not used';
+  document.getElementById('dev-live').textContent  = d.personal_deviation??'—';
+  document.getElementById('thresh-live').textContent = d.adaptive_threshold;
+}
+
+function triggerModal(d) {
   document.getElementById('modal-score').textContent =
-    `Score: ${d.risk_percent}% vs threshold: ${Math.round(d.adaptive_threshold*100)}%`;
+    `Risk: ${d.risk_percent}%  |  Threshold: ${Math.round(d.adaptive_threshold*100)}%`;
   document.getElementById('modal').classList.add('show');
 }
 function passAuth() {
   document.getElementById('modal').classList.remove('show');
-  addLog('✓ Step-up auth passed - session continues', 'low');
+  addLog('✓ Step-up auth PASSED — session continues','low');
+  addLogLive('✓ Identity verified — monitoring continues','low');
 }
 function failAuth() {
   document.getElementById('modal').classList.remove('show');
-  addLog('✕ Step-up auth FAILED - session locked', 'high');
-  document.getElementById('gauge-value').textContent = 'LOCKED';
-  document.getElementById('gauge-value').style.color = '#f87171';
+  addLog('✕ Step-up auth FAILED — session LOCKED','high');
+  addLogLive('✕ Session LOCKED','high');
+  document.getElementById('monitor-box').disabled = true;
 }
 
-// ── Log ───────────────────────────────────────────────────
-function addLog(msg, level = '') {
-  const log  = document.getElementById('log');
-  const time = new Date().toLocaleTimeString();
-  const div  = document.createElement('div');
-  div.className = `log-entry ${level}`;
-  div.textContent = `[${time}] ${msg}`;
-  log.prepend(div);
+function addLog(msg, lv='') {
+  const el = document.createElement('div');
+  el.className   = `log-e ${lv}`;
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  document.getElementById('log').prepend(el);
 }
-
+function addLogLive(msg, lv='') {
+  const el = document.createElement('div');
+  el.className   = `log-e ${lv}`;
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  document.getElementById('log-live').prepend(el);
+}
+function setMsg(id, msg, color) {
+  const el = document.getElementById(id);
+  el.textContent   = msg;
+  el.style.color   = color;
+}
 function resetDemo() {
   clearAllAlerts();
-  document.getElementById('gauge-arc').style.strokeDashoffset = 220;
-  document.getElementById('gauge-value').textContent = '0%';
-  document.getElementById('gauge-value').style.color = '#4ade80';
-  document.getElementById('decision-badge').textContent = '-';
-  document.getElementById('decision-badge').className  = 'badge';
-  addLog('Demo reset', 'low');
+  setGauge('gauge-arc','gauge-value','gauge-label','decision-badge','risk-fill','thresh-mark','thresh-label',
+    {risk_percent:0,risk_level:'low',decision:'—',user_id:'—',context:'—',adaptive_threshold:0.65});
+  addLog('Demo reset','low');
 }
 
-loadUsers();
+init();
 setInterval(updateAlertBadge, 5000);
 </script>
 </body>
