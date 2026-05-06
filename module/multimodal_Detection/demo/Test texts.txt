@@ -1,4 +1,4 @@
-✅ 🟢 Normal (Benign) Text Samples
+Normal (Benign) Text Samples
 
 These should ideally be LOW RISK
 
