@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-05-06T18:16:38.544944",
+  "layer": "MultimodalContentThreatDetection",
+  "final_risk_score": 0.4777,
+  "final_decision": "LOW_RISK",
+  "recommendation": "SAFE \u2014 No immediate action required",
+  "modality_scores": {
+    "text": {
+      "prediction": "phishing",
+      "risk_score": 0.6506,
+      "confidence": 0.6506
+    },
+    "video": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "audio": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    }
+  }
+}
