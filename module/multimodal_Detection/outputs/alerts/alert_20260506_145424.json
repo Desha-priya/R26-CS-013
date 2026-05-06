@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-05-06T14:54:24.728723",
+  "layer": "MultimodalContentThreatDetection",
+  "final_risk_score": 0.8481,
+  "final_decision": "HIGH_RISK",
+  "recommendation": "ALERT \u2014 Send to Zero-Trust Authentication Layer immediately",
+  "modality_scores": {
+    "text": {
+      "prediction": "phishing",
+      "risk_score": 0.9452,
+      "confidence": 0.9452
+    },
+    "video": {
+      "prediction": "fake",
+      "risk_score": 0.82,
+      "confidence": 0.82
+    },
+    "audio": {
+      "prediction": "fake",
+      "risk_score": 0.71,
+      "confidence": 0.71
+    }
+  },
+  "weights_used": {
+    "text": 0.4,
+    "video": 0.4,
+    "audio": 0.2
+  }
+}

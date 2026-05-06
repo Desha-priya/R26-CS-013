@@ -1,0 +1,1 @@
+This folder contains alert logs and notification files.
