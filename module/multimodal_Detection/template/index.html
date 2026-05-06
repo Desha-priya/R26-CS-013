@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeuraShield — Content Threat Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Design system ─────────────────────────────────────── */
+    :root {
+      --bg:        #050810;
+      --bg2:       #090d18;
+      --surface:   #0d1526;
+      --surface2:  #111d35;
+      --border:    #1a2a4a;
+      --border2:   #243554;
+      --accent:    #00d4ff;
+      --accent2:   #0099cc;
+      --danger:    #ff3b5c;
+      --warning:   #ffb800;
+      --success:   #00e676;
+      --purple:    #a855f7;
+      --text:      #e2eeff;
+      --muted:     #5a7399;
+      --muted2:    #3d5273;
+      --mono:      'JetBrains Mono', monospace;
+      --display:   'Syne', sans-serif;
+      --body:      'Inter', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    /* Glow orb */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px; z-index: 0;
+      background: radial-gradient(ellipse, #00d4ff12 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .layout {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 0;
+      position: sticky; top: 0; height: 100vh;
+    }
+
+    .logo-wrap {
+      padding: 1.5rem 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: var(--display);
+      font-size: 1.4rem; font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent); }
+    .logo-sub {
+      font-size: 0.65rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin-top: 0.3rem; font-family: var(--mono);
+    }
+
+    .nav { padding: 1rem 0.75rem; flex: 1; }
+    .nav-label {
+      font-size: 0.6rem; color: var(--muted2);
+      text-transform: uppercase; letter-spacing: 0.15em;
+      padding: 0.5rem 0.5rem 0.4rem;
+      font-family: var(--mono);
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.55rem 0.75rem; border-radius: 7px;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      color: var(--muted); transition: all 0.15s; margin-bottom: 2px;
+      border: 1px solid transparent;
+    }
+    .nav-item:hover { color: var(--text); background: var(--surface); }
+    .nav-item.active {
+      color: var(--accent); background: #00d4ff12;
+      border-color: #00d4ff22;
+    }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-status {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .status-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem;
+      font-family: var(--mono);
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success); flex-shrink: 0;
+      box-shadow: 0 0 6px var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .dot.off { background: var(--muted2); box-shadow: none; animation: none; }
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+
+    /* ── Main content ───────────────────────────────────────── */
+    .main { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Top bar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      backdrop-filter: blur(10px);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 1rem; }
+    .page-title {
+      font-family: var(--display); font-size: 1.05rem; font-weight: 700;
+      color: var(--text);
+    }
+    .page-sub { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .chip {
+      font-family: var(--mono); font-size: 0.68rem;
+      padding: 0.25rem 0.65rem; border-radius: 999px;
+      border: 1px solid var(--border2); color: var(--muted);
+      background: var(--surface);
+    }
+    .chip.live { color: var(--success); border-color: #00e67622; background: #00e67608; }
+
+    /* Content area */
+    .content { padding: 1.75rem 2rem; flex: 1; }
+
+    /* ── Stat cards row ─────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.1rem 1.25rem;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+    }
+    .stat-card.c-blue::before  { background: var(--accent); }
+    .stat-card.c-red::before   { background: var(--danger); }
+    .stat-card.c-yellow::before{ background: var(--warning); }
+    .stat-card.c-green::before { background: var(--success); }
+
+    .stat-label {
+      font-size: 0.68rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      font-family: var(--mono); margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-family: var(--display); font-size: 2rem; font-weight: 800;
+      line-height: 1; margin-bottom: 0.3rem;
+    }
+    .stat-card.c-blue  .stat-value { color: var(--accent); }
+    .stat-card.c-red   .stat-value { color: var(--danger); }
+    .stat-card.c-yellow.stat-value { color: var(--warning); }
+    .stat-card.c-green .stat-value { color: var(--success); }
+    .stat-sub { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── Two column layout ──────────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .full-col { grid-column: 1 / -1; }
+
+    /* ── Panel card ─────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .panel-title {
+      font-family: var(--display); font-size: 0.88rem; font-weight: 700;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .panel-body { padding: 1.25rem; }
+
+    /* ── Tabs ───────────────────────────────────────────────── */
+    .tabs { display: flex; gap: 3px; }
+    .tab-btn {
+      padding: 0.35rem 0.9rem; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent; color: var(--muted);
+      font-family: var(--mono); transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--border); }
+    .tab-btn.active {
+      background: var(--accent); color: #000; border-color: var(--accent);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Form elements ──────────────────────────────────────── */
+    textarea {
+      width: 100%; padding: 0.8rem 1rem; border-radius: 8px;
+      border: 1px solid var(--border2); background: var(--bg);
+      color: var(--text); font-size: 0.83rem; resize: vertical;
+      min-height: 110px; font-family: var(--mono);
+      transition: border-color 0.15s; line-height: 1.6;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted2); }
+
+    .drop-zone {
+      border: 2px dashed var(--border2); border-radius: 10px;
+      padding: 2rem 1rem; text-align: center; cursor: pointer;
+      transition: all 0.2s; position: relative;
+      background: var(--bg);
+    }
+    .drop-zone:hover { border-color: var(--accent); background: #00d4ff06; }
+    .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .drop-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .drop-text { font-size: 0.82rem; color: var(--muted); }
+    .drop-hint { font-size: 0.72rem; color: var(--muted2); margin-top: 0.25rem; font-family: var(--mono); }
+    .drop-name { font-size: 0.78rem; color: var(--accent); margin-top: 0.5rem; font-family: var(--mono); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.7rem 1.5rem; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s; font-family: var(--body);
+      width: 100%; margin-top: 1rem; letter-spacing: 0.02em;
+    }
+    .btn-primary {
+      background: var(--accent); color: #000;
+      box-shadow: 0 0 20px #00d4ff30;
+    }
+    .btn-primary:hover { background: #33ddff; box-shadow: 0 0 30px #00d4ff50; }
+
+    /* ── Spinner ────────────────────────────────────────────── */
+    .spinner {
+      display: none; padding: 2.5rem 1rem; text-align: center;
+    }
+    .spinner.show { display: block; }
+    .spin-ring {
+      width: 36px; height: 36px; margin: 0 auto 0.75rem;
+      border: 3px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin-text { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+
+    /* ── Results ────────────────────────────────────────────── */
+    .result-panel { display: none; }
+    .result-panel.show { display: block; }
+
+    .verdict-banner {
+      display: flex; align-items: center; gap: 1.25rem;
+      padding: 1.25rem 1.5rem; border-radius: 10px; margin-bottom: 1.25rem;
+      border: 1px solid;
+    }
+    .verdict-banner.high   { border-color: #ff3b5c44; background: #ff3b5c0d; }
+    .verdict-banner.medium { border-color: #ffb80044; background: #ffb8000d; }
+    .verdict-banner.low    { border-color: #00e67644; background: #00e6760d; }
+
+    .verdict-icon { font-size: 2.5rem; line-height: 1; }
+    .verdict-info { flex: 1; }
+    .verdict-label {
+      font-family: var(--display); font-size: 1.5rem; font-weight: 800;
+    }
+    .verdict-banner.high   .verdict-label { color: var(--danger);  }
+    .verdict-banner.medium .verdict-label { color: var(--warning); }
+    .verdict-banner.low    .verdict-label { color: var(--success); }
+
+    .verdict-rec { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    .verdict-id  { font-family: var(--mono); font-size: 0.65rem; color: var(--muted2); margin-top: 0.2rem; }
+
+    .risk-score-big {
+      text-align: right; min-width: 80px;
+    }
+    .risk-score-big .score-num {
+      font-family: var(--display); font-size: 2.2rem; font-weight: 800; line-height: 1;
+    }
+    .verdict-banner.high   .score-num { color: var(--danger);  }
+    .verdict-banner.medium .score-num { color: var(--warning); }
+    .verdict-banner.low    .score-num { color: var(--success); }
+    .score-label { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
+
+    /* Modality cards */
+    .mod-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem; margin-bottom: 1.25rem;
+    }
+    .mod-card {
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      position: relative; overflow: hidden;
+    }
+    .mod-card-top {
+      font-size: 0.65rem; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.12em; font-family: var(--mono);
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;
+    }
+    .mod-pred { font-family: var(--display); font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .mod-pred.fake  { color: var(--danger);  }
+    .mod-pred.real  { color: var(--success); }
+    .mod-pred.unkn  { color: var(--muted);   }
+
+    .mod-bar-wrap { margin-bottom: 0.3rem; }
+    .mod-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.68rem; color: var(--muted); margin-bottom: 0.25rem;
+      font-family: var(--mono);
+    }
+    .mod-bar { height: 5px; border-radius: 999px; background: var(--border); }
+    .mod-bar-fill { height: 100%; border-radius: 999px; transition: width 0.7s ease; }
+
+    /* Main risk bar */
+    .main-bar-wrap { margin-bottom: 1.25rem; }
+    .main-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem;
+      font-family: var(--mono);
+    }
+    .main-bar { height: 10px; border-radius: 999px; background: var(--border); }
+    .main-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s ease; }
+
+    /* JSON output */
+    .json-wrap {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .json-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .json-toolbar-left { display: flex; align-items: center; gap: 0.5rem; }
+    .json-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .json-title { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+    .copy-btn {
+      font-family: var(--mono); font-size: 0.68rem; padding: 0.25rem 0.65rem;
+      border-radius: 5px; border: 1px solid var(--border2);
+      background: transparent; color: var(--muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .json-body {
+      padding: 1rem; font-family: var(--mono); font-size: 0.75rem;
+      line-height: 1.7; max-height: 300px; overflow-y: auto;
+      white-space: pre; color: #79c0ff;
+    }
+
+    /* Alert history */
+    .alert-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .alert-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.7rem 0.9rem; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+    .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .alert-dot.high   { background: var(--danger);  box-shadow: 0 0 5px var(--danger);  }
+    .alert-dot.medium { background: var(--warning); box-shadow: 0 0 5px var(--warning); }
+    .alert-dot.low    { background: var(--success); box-shadow: 0 0 5px var(--success); }
+    .alert-dec { font-weight: 600; flex: 1; }
+    .alert-dec.high   { color: var(--danger);  }
+    .alert-dec.medium { color: var(--warning); }
+    .alert-dec.low    { color: var(--success); }
+    .alert-score { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+    .alert-time  { font-family: var(--mono); font-size: 0.68rem; color: var(--muted2); }
+    .alert-empty { color: var(--muted2); font-size: 0.8rem; font-family: var(--mono); padding: 1rem 0; }
+
+    /* Layer status panel */
+    .layer-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+    .layer-row:last-child { border-bottom: none; }
+    .layer-name { flex: 1; color: var(--muted); }
+    .layer-badge {
+      font-family: var(--mono); font-size: 0.65rem;
+      padding: 0.2rem 0.55rem; border-radius: 999px;
+    }
+    .layer-badge.active { background: #00e67618; color: var(--success); border: 1px solid #00e67630; }
+    .layer-badge.self   { background: #00d4ff18; color: var(--accent);  border: 1px solid #00d4ff30; }
+    .layer-badge.linked { background: #a855f718; color: var(--purple);  border: 1px solid #a855f730; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
+
+    /* Colour utility fills */
+    .fill-danger  { background: var(--danger);  }
+    .fill-warning { background: var(--warning); }
+    .fill-success { background: var(--success); }
+    .fill-accent  { background: var(--accent);  }
+    .fill-muted   { background: var(--muted2);  }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .mod-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo">Neura<span>Shield</span></div>
+      <div class="logo-sub">Content Threat Detection · v1.0</div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">Detection</div>
+      <div class="nav-item active" onclick="showSection('analyse')">
+        <span class="nav-icon">🔍</span> Analyse Content
+      </div>
+      <div class="nav-item" onclick="showSection('alerts')">
+        <span class="nav-icon">🛡</span> Alert History
+      </div>
+
+      <div class="nav-label" style="margin-top:.75rem;">System</div>
+      <div class="nav-item" onclick="showSection('status')">
+        <span class="nav-icon">⚡</span> Layer Status
+      </div>
+      <div class="nav-item" onclick="window.open('/docs','_blank')">
+        <span class="nav-icon">📋</span> API Docs ↗
+      </div>
+    </nav>
+
+    <div class="sidebar-status">
+      <div class="status-row"><div class="dot" id="dot-text"></div> Text Model</div>
+      <div class="status-row"><div class="dot" id="dot-video"></div> Video Model</div>
+      <div class="status-row"><div class="dot off" id="dot-audio"></div> Audio Model</div>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div>
+          <div class="page-title" id="page-title">Content Analysis</div>
+          <div class="page-sub">Multimodal threat detection — text · video · audio</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="chip live">● LIVE</span>
+        <span class="chip" id="topbar-count">0 analyses</span>
+        <span class="chip" id="topbar-time" style="font-size:.65rem;"></span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-card c-blue">
+          <div class="stat-label">Total Analyses</div>
+          <div class="stat-value" id="s-total">0</div>
+          <div class="stat-sub">since server start</div>
+        </div>
+        <div class="stat-card c-red">
+          <div class="stat-label">High Risk</div>
+          <div class="stat-value" id="s-high" style="color:var(--danger)">0</div>
+          <div class="stat-sub">immediate alerts sent</div>
+        </div>
+        <div class="stat-card c-yellow">
+          <div class="stat-label">Medium Risk</div>
+          <div class="stat-value" id="s-medium" style="color:var(--warning)">0</div>
+          <div class="stat-sub">flagged for review</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="stat-label">Threat Rate</div>
+          <div class="stat-value" id="s-rate" style="color:var(--success)">0%</div>
+          <div class="stat-sub">of total analysed</div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION: Analyse ═══════════════════════════════ -->
+      <div id="section-analyse">
+        <div class="two-col">
+
+          <!-- Input panel -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">🔬 Input Content</div>
+              <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('text',this)">Email</button>
+                <button class="tab-btn" onclick="switchTab('video',this)">Video</button>
+                <button class="tab-btn" onclick="switchTab('audio',this)">Audio</button>
+                <button class="tab-btn" onclick="switchTab('all',this)">All</button>
+              </div>
+            </div>
+            <div class="panel-body">
+
+              <div id="tab-text" class="tab-panel active">
+                <textarea id="email-text"
+                  placeholder="Paste email content for phishing analysis...&#10;&#10;Example: Dear customer, your account has been suspended due to suspicious activity. Click here immediately to verify your identity or your account will be permanently deleted."></textarea>
+              </div>
+
+              <div id="tab-video" class="tab-panel">
+                <div class="drop-zone">
+                  <input type="file" id="video-file" accept=".mp4,.avi" onchange="setFileName(this,'vname')"/>
+                  <div class="drop-icon">🎥</div>
+                  <div class="drop-text">Drop video file or click to browse</div>
+                  <div class="drop-hint">Accepts .mp4 · .avi</div>
+                  <div class="drop-name" id="vname">No file selected</div>
+                </div>
+              </div>
+
+              <div id="tab-audio" class="tab-panel">
+                <div class="drop-zone">
+                  <input type="file" id="audio-file" accept=".flac,.wav,.mp3" onchange="setFileName(this,'aname')"/>
+                  <div class="drop-icon">🎙</div>
+                  <div class="drop-text">Drop audio file or click to browse</div>
+                  <div class="drop-hint">Accepts .flac · .wav · .mp3</div>
+                  <div class="drop-name" id="aname">No file selected</div>
+                </div>
+              </div>
+
+              <div id="tab-all" class="tab-panel">
+                <textarea id="all-text" placeholder="Email text (optional)..." style="min-height:70px;margin-bottom:.75rem;"></textarea>
+                <div class="drop-zone" style="margin-bottom:.75rem;">
+                  <input type="file" id="all-video" accept=".mp4,.avi" onchange="setFileName(this,'avname')"/>
+                  <div class="drop-text">🎥 Video file (optional)</div>
+                  <div class="drop-name" id="avname">No file selected</div>
+                </div>
+                <div class="drop-zone">
+                  <input type="file" id="all-audio" accept=".flac,.wav,.mp3" onchange="setFileName(this,'aaname')"/>
+                  <div class="drop-text">🎙 Audio file (optional)</div>
+                  <div class="drop-name" id="aaname">No file selected</div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" onclick="runAnalysis()">
+                ⚡ Run Threat Analysis
+              </button>
+
+              <!-- Spinner -->
+              <div class="spinner" id="spinner">
+                <div class="spin-ring"></div>
+                <div class="spin-text">Analysing across all modalities...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result panel -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">🛡 Detection Result</div>
+              <span id="result-req-id" style="font-family:var(--mono);font-size:.65rem;color:var(--muted2);"></span>
+            </div>
+            <div class="panel-body">
+
+              <!-- Empty state -->
+              <div id="empty-state" style="text-align:center;padding:3rem 1rem;color:var(--muted2);">
+                <div style="font-size:2.5rem;margin-bottom:.75rem;">🔍</div>
+                <div style="font-family:var(--mono);font-size:.8rem;">
+                  Submit content to see<br/>threat analysis results
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div class="result-panel" id="result-panel">
+
+                <!-- Verdict banner -->
+                <div class="verdict-banner" id="verdict-banner">
+                  <div class="verdict-icon" id="v-icon"></div>
+                  <div class="verdict-info">
+                    <div class="verdict-label" id="v-label"></div>
+                    <div class="verdict-rec"   id="v-rec"></div>
+                    <div class="verdict-id"    id="v-time"></div>
+                  </div>
+                  <div class="risk-score-big">
+                    <div class="score-num" id="v-score"></div>
+                    <div class="score-label">RISK SCORE</div>
+                  </div>
+                </div>
+
+                <!-- Combined risk bar -->
+                <div class="main-bar-wrap">
+                  <div class="main-bar-label">
+                    <span>Combined threat risk</span>
+                    <span id="v-pct"></span>
+                  </div>
+                  <div class="main-bar">
+                    <div class="main-bar-fill" id="v-bar" style="width:0%"></div>
+                  </div>
+                </div>
+
+                <!-- Modality cards -->
+                <div class="mod-grid" id="mod-grid"></div>
+
+                <!-- Processing time -->
+                <div style="font-family:var(--mono);font-size:.65rem;color:var(--muted2);text-align:right;margin-top:-.5rem;margin-bottom:.75rem;" id="proc-time"></div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JSON output full width -->
+        <div class="panel full-col" id="json-panel" style="display:none;">
+          <div class="panel-head">
+            <div class="panel-title">📄 JSON Alert Output <span style="font-size:.7rem;color:var(--muted);font-weight:400;font-family:var(--mono);">— sent to other NeuraShield layers</span></div>
+          </div>
+          <div class="panel-body" style="padding:0;">
+            <div class="json-wrap">
+              <div class="json-toolbar">
+                <div class="json-toolbar-left">
+                  <div class="json-dot" style="background:#ff5f57;"></div>
+                  <div class="json-dot" style="background:#febc2e;"></div>
+                  <div class="json-dot" style="background:#28c840;"></div>
+                  <span class="json-title" style="margin-left:.5rem;">alert_output.json</span>
+                </div>
+                <button class="copy-btn" onclick="copyJson()">Copy JSON</button>
+              </div>
+              <div class="json-body" id="json-out"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION: Alert History ═════════════════════════ -->
+      <div id="section-alerts" style="display:none;">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">🛡 Recent Alert History</div>
+            <button class="copy-btn" onclick="loadAlerts()">↻ Refresh</button>
+          </div>
+          <div class="panel-body">
+            <div class="alert-list" id="alert-list">
+              <div class="alert-empty">Loading alerts...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION: Layer Status ══════════════════════════ -->
+      <div id="section-status" style="display:none;">
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">⚡ NeuraShield Layer Status</div>
+            </div>
+            <div class="panel-body">
+              <div class="layer-row">
+                <div class="dot"></div>
+                <div class="layer-name">Network Guardian (Zero-Day IDS)</div>
+                <span class="layer-badge active">ACTIVE</span>
+              </div>
+              <div class="layer-row">
+                <div class="dot"></div>
+                <div class="layer-name">Ransomware Killer (Endpoint)</div>
+                <span class="layer-badge active">ACTIVE</span>
+              </div>
+              <div class="layer-row" style="background:#00d4ff06;border-radius:8px;padding:.65rem .75rem;">
+                <div class="dot" style="background:var(--accent);box-shadow:0 0 6px var(--accent);"></div>
+                <div class="layer-name" style="color:var(--accent);font-weight:600;">Content Threat Detection ← THIS LAYER</div>
+                <span class="layer-badge self">RUNNING</span>
+              </div>
+              <div class="layer-row">
+                <div class="dot" style="background:var(--purple);box-shadow:0 0 6px var(--purple);animation:pulse 2s infinite;"></div>
+                <div class="layer-name">Zero-Trust Auth (Receives alerts)</div>
+                <span class="layer-badge linked">LINKED</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">🤖 ML Models Status</div>
+            </div>
+            <div class="panel-body" id="model-status-panel">
+              <div class="alert-empty">Checking...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── Global state ──────────────────────────────────────────────
+let activeTab = 'text';
+let lastJson  = '';
+
+// ── Navigation ────────────────────────────────────────────────
+function showSection(name) {
+  ['analyse','alerts','status'].forEach(s => {
+    document.getElementById('section-'+s).style.display = s === name ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const titles = { analyse: 'Content Analysis', alerts: 'Alert History', status: 'Layer Status' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+
+  if (name === 'alerts') loadAlerts();
+  if (name === 'status') loadHealth();
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  activeTab = tab;
+}
+
+function setFileName(input, id) {
+  document.getElementById(id).textContent =
+    input.files[0] ? '📎 ' + input.files[0].name : 'No file selected';
+}
+
+// ── Stats polling (every 5 seconds) ──────────────────────────
+function updateStats() {
+  fetch('/api/stats').then(r => r.json()).then(d => {
+    document.getElementById('s-total').textContent  = d.total_analyses;
+    document.getElementById('s-high').textContent   = d.high_risk;
+    document.getElementById('s-medium').textContent = d.medium_risk;
+    document.getElementById('s-rate').textContent   = d.threat_rate_pct + '%';
+    document.getElementById('topbar-count').textContent = d.total_analyses + ' analyses';
+    const now = new Date();
+    document.getElementById('topbar-time').textContent =
+      now.toTimeString().slice(0,8);
+  }).catch(() => {});
+}
+updateStats();
+setInterval(updateStats, 5000);
+
+// ── Health check ──────────────────────────────────────────────
+function loadHealth() {
+  fetch('/health').then(r => r.json()).then(d => {
+    // Update sidebar dots
+    const m = d.models_loaded;
+    setDot('dot-text',  m.text_phishing_classifier);
+    setDot('dot-video', m.video_deepfake_classifier);
+    setDot('dot-audio', m.audio_clone_classifier);
+
+    // Update model status panel
+    const panel = document.getElementById('model-status-panel');
+    panel.innerHTML = '';
+    const models = [
+      { key: 'text_phishing_classifier',  name: 'Text Phishing Classifier',  icon: '📧' },
+      { key: 'video_deepfake_classifier', name: 'Video Deepfake Classifier', icon: '🎥' },
+      { key: 'audio_clone_classifier',    name: 'Audio Clone Classifier',    icon: '🎙' },
+    ];
+    models.forEach(mod => {
+      const loaded = m[mod.key];
+      panel.innerHTML += `
+        <div class="layer-row">
+          <div class="dot" style="background:${loaded ? 'var(--success)' : 'var(--muted2)'};
+               box-shadow:${loaded ? '0 0 6px var(--success)' : 'none'};
+               animation:${loaded ? 'pulse 2s infinite' : 'none'}"></div>
+          <div class="layer-name">${mod.icon} ${mod.name}</div>
+          <span class="layer-badge ${loaded ? 'active' : ''}"
+                style="${!loaded ? 'background:#ff3b5c12;color:var(--danger);border-color:#ff3b5c30' : ''}">
+            ${loaded ? 'LOADED' : 'NOT LOADED'}
+          </span>
+        </div>`;
+    });
+    panel.innerHTML += `
+      <div style="margin-top:1rem;font-family:var(--mono);font-size:.68rem;color:var(--muted2);">
+        API v${d.system_info.api_version} · Up since ${new Date(d.system_info.uptime_since).toLocaleTimeString()}
+      </div>`;
+  }).catch(() => {});
+}
+
+function setDot(id, loaded) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (loaded) { el.classList.remove('off'); }
+  else        { el.classList.add('off');    }
+}
+
+// Load health on page load to set sidebar dots
+loadHealth();
+
+// ── Load alert history ────────────────────────────────────────
+function loadAlerts() {
+  const list = document.getElementById('alert-list');
+  list.innerHTML = '<div class="alert-empty">Loading...</div>';
+  fetch('/api/alerts?limit=20').then(r => r.json()).then(d => {
+    if (!d.alerts.length) {
+      list.innerHTML = '<div class="alert-empty">No alerts yet. Run an analysis first.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    d.alerts.forEach(a => {
+      const cls = a.final_decision === 'HIGH_RISK' ? 'high'
+                : a.final_decision === 'MEDIUM_RISK' ? 'medium' : 'low';
+      const t = new Date(a.timestamp).toLocaleString();
+      list.innerHTML += `
+        <div class="alert-item">
+          <div class="alert-dot ${cls}"></div>
+          <div class="alert-dec ${cls}">${a.final_decision.replace('_',' ')}</div>
+          <div class="alert-score">Risk: ${(a.final_risk_score * 100).toFixed(1)}%</div>
+          <div class="alert-time">${t}</div>
+        </div>`;
+    });
+  }).catch(() => {
+    list.innerHTML = '<div class="alert-empty">Could not load alerts.</div>';
+  });
+}
+
+// ── Run analysis ──────────────────────────────────────────────
+async function runAnalysis() {
+  const spinner   = document.getElementById('spinner');
+  const emptyState= document.getElementById('empty-state');
+  const resultPanel = document.getElementById('result-panel');
+  const jsonPanel = document.getElementById('json-panel');
+
+  spinner.classList.add('show');
+  emptyState.style.display  = 'none';
+  resultPanel.classList.remove('show');
+  jsonPanel.style.display   = 'none';
+
+  try {
+    const fd = new FormData();
+
+    if (activeTab === 'text') {
+      fd.append('email_text', document.getElementById('email-text').value);
+    } else if (activeTab === 'video') {
+      const f = document.getElementById('video-file').files[0];
+      if (f) fd.append('video_file', f);
+    } else if (activeTab === 'audio') {
+      const f = document.getElementById('audio-file').files[0];
+      if (f) fd.append('audio_file', f);
+    } else {
+      fd.append('email_text', document.getElementById('all-text').value);
+      const vf = document.getElementById('all-video').files[0];
+      const af = document.getElementById('all-audio').files[0];
+      if (vf) fd.append('video_file', vf);
+      if (af) fd.append('audio_file', af);
+    }
+
+    const resp = await fetch('/api/analyse', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    renderResults(data);
+    updateStats();
+
+  } catch (err) {
+    emptyState.style.display = '';
+    emptyState.innerHTML = `<div style="font-size:1.5rem;margin-bottom:.5rem;">⚠️</div>
+      <div style="font-family:var(--mono);font-size:.75rem;color:var(--danger);">${err.message}</div>`;
+  } finally {
+    spinner.classList.remove('show');
+  }
+}
+
+// ── Render results ────────────────────────────────────────────
+function renderResults(data) {
+  const risk = data.final_risk_score;
+  const dec  = data.final_decision;
+  const cls  = dec === 'HIGH_RISK' ? 'high' : dec === 'MEDIUM_RISK' ? 'medium' : 'low';
+
+  // Verdict banner
+  const banner = document.getElementById('verdict-banner');
+  banner.className = 'verdict-banner ' + cls;
+  document.getElementById('v-icon').textContent  =
+    dec === 'HIGH_RISK' ? '🚨' : dec === 'MEDIUM_RISK' ? '⚠️' : '✅';
+  document.getElementById('v-label').textContent = dec.replace(/_/g,' ');
+  document.getElementById('v-rec').textContent   = data.recommendation;
+  document.getElementById('v-time').textContent  =
+    `${data.timestamp} · ${data.processing_time_ms}ms · ${data.request_id}`;
+  document.getElementById('v-score').textContent = (risk * 100).toFixed(1) + '%';
+  document.getElementById('result-req-id').textContent = data.request_id;
+
+  // Main bar
+  const pct = (risk * 100).toFixed(1) + '%';
+  document.getElementById('v-pct').textContent = pct;
+  const bar = document.getElementById('v-bar');
+  bar.style.width = pct;
+  bar.className   = 'main-bar-fill ' +
+    (risk >= 0.65 ? 'fill-danger' : risk >= 0.40 ? 'fill-warning' : 'fill-success');
+
+  // Processing time
+  document.getElementById('proc-time').textContent =
+    `Processed in ${data.processing_time_ms}ms · Modalities: ${data.modalities_used.join(', ') || 'none'}`;
+
+  // Modality cards
+  const grid = document.getElementById('mod-grid');
+  grid.innerHTML = '';
+  const mods = [
+    { key: 'text',  icon: '📧', name: 'Email Text'  },
+    { key: 'video', icon: '🎥', name: 'Video'        },
+    { key: 'audio', icon: '🎙', name: 'Audio'        }
+  ];
+  mods.forEach(m => {
+    const s = data.modality_scores[m.key];
+    if (!s) return;
+
+    const isUnknown = s.prediction === 'unknown';
+    const isFake    = s.prediction === 'fake' || s.prediction === 'phishing';
+    const predCls   = isUnknown ? 'unkn' : isFake ? 'fake' : 'real';
+    const predTxt   = isUnknown ? '— N/A —'
+                    : isFake    ? 'THREAT / FAKE' : 'SAFE / REAL';
+    const barCls    = isUnknown ? 'fill-muted'
+                    : s.risk_score >= 0.65 ? 'fill-danger'
+                    : s.risk_score >= 0.40 ? 'fill-warning' : 'fill-success';
+
+    grid.innerHTML += `
+      <div class="mod-card">
+        <div class="mod-card-top">${m.icon} ${m.name}</div>
+        <div class="mod-pred ${predCls}">${predTxt}</div>
+        <div class="mod-bar-wrap">
+          <div class="mod-bar-label">
+            <span>Risk</span><span>${(s.risk_score*100).toFixed(1)}%</span>
+          </div>
+          <div class="mod-bar">
+            <div class="mod-bar-fill ${barCls}" style="width:${s.risk_score*100}%"></div>
+          </div>
+        </div>
+        <div class="mod-bar-wrap">
+          <div class="mod-bar-label">
+            <span>Confidence</span><span>${(s.confidence*100).toFixed(1)}%</span>
+          </div>
+          <div class="mod-bar">
+            <div class="mod-bar-fill fill-accent" style="width:${s.confidence*100}%;opacity:.5"></div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // JSON output
+  lastJson = JSON.stringify(data, null, 2);
+  document.getElementById('json-out').textContent = lastJson;
+  document.getElementById('json-panel').style.display = '';
+
+  // Show results
+  document.getElementById('result-panel').classList.add('show');
+  document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Copy JSON ─────────────────────────────────────────────────
+function copyJson() {
+  navigator.clipboard.writeText(lastJson).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy JSON'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-05-06T17:20:49.601947",
+  "layer": "MultimodalContentThreatDetection",
+  "final_risk_score": 0.5,
+  "final_decision": "MEDIUM_RISK",
+  "recommendation": "MONITOR -* Flag for secondary review",
+  "modality_scores": {
+    "text": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "video": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "audio": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    }
+  },
+  "weights_used": {
+    "text": 0.4,
+    "video": 0.4,
+    "audio": 0.2
+  }
+}
