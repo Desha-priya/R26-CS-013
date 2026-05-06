@@ -1,6 +1,12 @@
+from pathlib import Path
 import pandas as pd
 
-df = pd.read_csv("all_keystroke_features(FinalCleaned).csv")
+ROOT_DIR = Path(__file__).resolve().parent
+health_file = ROOT_DIR / "processed" / "all_keystroke_features(FinalCleaned).csv"
+if not health_file.exists():
+    health_file = ROOT_DIR / "all_keystroke_features(FinalCleaned).csv"
+
+df = pd.read_csv(health_file)
 
 # ---------- BASIC PREVIEW ----------
 print("HEAD:")

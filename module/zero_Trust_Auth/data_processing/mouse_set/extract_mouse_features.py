@@ -8,9 +8,14 @@ import pandas as pd
 import numpy as np
 import os
 import glob
+from pathlib import Path
 
-base_path  = r"BB-MAS_Dataset"
-output_file = "user_mouse_profiles.csv"
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET = ROOT_DIR.parent / "BB-MAS_Dataset"
+base_path = DEFAULT_DATASET if DEFAULT_DATASET.exists() else Path("BB-MAS_Dataset")
+PROCESSED_DIR = ROOT_DIR / "processed"
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+output_file = PROCESSED_DIR / "user_mouse_profiles.csv"
 
 
 def parse_time(df, col='time'):

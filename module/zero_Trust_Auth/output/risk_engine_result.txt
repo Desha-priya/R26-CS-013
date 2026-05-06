@@ -1,0 +1,21 @@
+
+--- TEST 1: Normal user, no alerts ---
+Risk: 1% | Decision: allow | Threshold: 0.65
+
+--- TEST 2: All 3 alerts active, normal user ---
+Risk: 27% | Alert boost: 0.26 | Threshold: 0.32 | Decision: warn
+
+--- TEST 3: All alerts, anomaly user, sensitive context ---
+Anomaly user 12 | Risk: 40% | Decision: step_up_auth | Threshold: 0.15
+
+--- TEST 4: Simulated attacker, all alerts ---
+Risk: 100% | Decision: step_up_auth
+
+--- TEST 5: Live mode window test (3 consecutive calls) ---
+Call 1: Risk: 13% | Window size: 1
+Call 2: Risk: 13% | Window size: 2
+Call 3: Risk: 13% | Window size: 3
+
+--- SANITY CHECK ---
+Total features expected: 48
+User feature count: 48

@@ -1,8 +1,14 @@
 import pandas as pd
 import numpy as np
 import os
+from pathlib import Path
 
-root_folder = r"BB-MAS_Dataset" 
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET = ROOT_DIR.parent / "BB-MAS_Dataset"
+root_folder = DEFAULT_DATASET if DEFAULT_DATASET.exists() else Path("BB-MAS_Dataset")
+PROCESSED_DIR = ROOT_DIR / "processed"
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_FILE = PROCESSED_DIR / "all_keystroke_features(FinalCleaned).csv"
 
 def extract_keystroke_features(df, user_id):
 
@@ -118,7 +124,7 @@ for user_folder in os.listdir(root_folder):
 # Combine all
 if all_features:
     final_df = pd.concat(all_features, ignore_index=True)
-    final_df.to_csv("all_keystroke_features(FinalCleaned).csv", index=False)
+    final_df.to_csv(OUTPUT_FILE, index=False)
     print(f"\n SUCCESS! Total features extracted from all users: {len(final_df)}")
     print("Saved to: all_keystroke_features.csv")
 else:

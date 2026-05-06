@@ -1,8 +1,11 @@
 import pandas as pd
 import os
 import glob
+from pathlib import Path
 
-base_path = r"BB-MAS_Dataset"  # same path as your keyboard script
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET = ROOT_DIR.parent / "BB-MAS_Dataset"
+base_path = DEFAULT_DATASET if DEFAULT_DATASET.exists() else Path("BB-MAS_Dataset")  # same path as your keyboard script
 
 user_folders = sorted([f for f in os.listdir(base_path) if f.isdigit()])
 if not user_folders:

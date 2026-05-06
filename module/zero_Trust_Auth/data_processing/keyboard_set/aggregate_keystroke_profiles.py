@@ -2,11 +2,16 @@
 # Converts raw keystroke rows → one summary row per user
 # This is your proper "keystroke behavioral profile"
 
+from pathlib import Path
 import pandas as pd
 import numpy as np
 
-RAW_KEYSTROKE_FILE = r"C:\Users\Nethma Sankalpa\Documents\SLIIT campus\CS-Research(PC)\Zero trusst layer\Dataset\BB-MAS_Dataset\extraction pipeline\all_keystroke_features(FinalCleaned).csv"
-OUTPUT_FILE        = "user_keystroke_profiles.csv"
+ROOT_DIR = Path(__file__).resolve().parent
+RAW_KEYSTROKE_FILE = ROOT_DIR / "raw" / "all_keystroke_features(FinalCleaned).csv"
+if not RAW_KEYSTROKE_FILE.exists():
+    RAW_KEYSTROKE_FILE = ROOT_DIR / "processed" / "all_keystroke_features(FinalCleaned).csv"
+
+OUTPUT_FILE = ROOT_DIR / "processed" / "user_keystroke_profiles.csv"
 
 print("Loading raw keystroke data...")
 df = pd.read_csv(RAW_KEYSTROKE_FILE)
