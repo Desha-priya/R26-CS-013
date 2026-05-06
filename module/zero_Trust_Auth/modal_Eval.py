@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import joblib
 import os
+from pathlib import Path
 from sklearn.metrics import (
     precision_score, recall_score, f1_score,
     confusion_matrix, roc_curve, auc,
@@ -18,18 +19,20 @@ from sklearn.metrics import (
 )
 
 # -* Config -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-MODELS_DIR   = r"models\zero_trust_auth"
-DATA_FILE    = r"src\zero_Trust_Auth\user_behavioral_profiles_combined.csv"
-RESULTS_DIR  = r"src\zero_Trust_Auth\Eval_results"
+ROOT_DIR     = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT_DIR.parent.parent
+MODELS_DIR   = PROJECT_ROOT / "models" / "zero_trust_auth"
+DATA_FILE    = ROOT_DIR / "data_processing" / "user_behavioral_profiles_combined.csv"
+RESULTS_DIR  = ROOT_DIR / "Eval_results"
 
-os.makedirs(RESULTS_DIR, exist_ok=True)
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # -* Load models and data -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 print("Loading models and data...")
 
-scaler      = joblib.load(os.path.join(MODELS_DIR, "scaler_v2.pkl"))
-iso_forest  = joblib.load(os.path.join(MODELS_DIR, "isolation_forest_v2.pkl"))
-oc_svm      = joblib.load(os.path.join(MODELS_DIR, "oneclass_svm_v2.pkl"))
+scaler      = joblib.load(MODELS_DIR / "scaler_v2.pkl")
+iso_forest  = joblib.load(MODELS_DIR / "isolation_forest_v2.pkl")
+oc_svm      = joblib.load(MODELS_DIR / "oneclass_svm_v2.pkl")
 
 df          = pd.read_csv(DATA_FILE)
 

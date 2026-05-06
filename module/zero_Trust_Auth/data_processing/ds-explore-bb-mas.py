@@ -1,8 +1,10 @@
 """import pandas as pd
 import os
+from pathlib import Path
 
-# Change this to your actual path where you unzipped BB-MAS
-dataset_path = "BB-MAS_Dataset"   # ←←← CHANGE THIS
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET = ROOT_DIR / "BB-MAS_Dataset"
+dataset_path = DEFAULT_DATASET if DEFAULT_DATASET.exists() else Path("BB-MAS_Dataset")
 
 # List all files
 files = [f for f in os.listdir(dataset_path) if f.endswith('.csv')]
@@ -19,7 +21,6 @@ print("\nFirst 5 rows:\n", df.head())  """
 import pandas as pd
 import os
 
-dataset_path = "BB-MAS_Dataset"
 # List all CSV files
 csv_files = [f for f in os.listdir(dataset_path) if f.endswith('.csv')]
 print("All CSV files found:")

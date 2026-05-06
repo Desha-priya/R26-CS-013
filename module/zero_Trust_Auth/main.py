@@ -13,6 +13,10 @@ import sys
 import pathlib
 from pathlib import Path
 
+ROOT_DIR    = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT_DIR.parent.parent
+DATA_DIR    = ROOT_DIR / "data_processing"
+MODELS_DIR  = PROJECT_ROOT / "models" / "zero_trust_auth"
 
 sys.path.append(os.path.dirname(__file__))
 from risk_engine import RiskEngine
@@ -23,9 +27,9 @@ engine = RiskEngine()
 
 # ** Load aggregated keystroke profiles ********************
 
-k_features = Path(__file__).resolve().parent / "zero_Trust_Auth" / "data_processing" / "keyboard_set" / "user_keystroke_profiles.csv"
-
-KS_AGG_FILE = k_features
+KS_AGG_FILE = DATA_DIR / "keyboard_set" / "processed" / "user_keystroke_profiles.csv"
+if not KS_AGG_FILE.exists():
+    KS_AGG_FILE = DATA_DIR / "keyboard_set" / "user_keystroke_profiles.csv"
 
 ks_agg_df   = None
 if os.path.exists(KS_AGG_FILE):
@@ -33,7 +37,7 @@ if os.path.exists(KS_AGG_FILE):
     print(f"Keystroke profiles loaded: {ks_agg_df.shape}")
 
 # ** Load combined profiles for feature lookup ************-
-PROFILES_FILE = "user_behavioral_profiles_combined.csv"
+PROFILES_FILE = DATA_DIR / "user_behavioral_profiles_combined.csv"
 profiles_df   = pd.read_csv(PROFILES_FILE)
 FEATURE_COLS  = [c for c in profiles_df.columns if c != 'user']
 
@@ -52,12 +56,13 @@ class ReplayRequest(BaseModel):
     context:   str = 'normal_browsing'
     n_samples: int = 100
 
-# ** Feature builder **************************************-
+# *- Feature builder *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 def build_features_from_raw(user_id: int, n_samples: int = 100) -> Optional[list]:
     user_row = profiles_df[profiles_df['user'] == user_id]
     if user_row.empty:
         return None
     return user_row[FEATURE_COLS].values[0].tolist()
+
 
 # ** Routes ************************************************
 
@@ -87,7 +92,14 @@ async def score_session(req: ScoreRequest):
             status_code=400,
             detail=f"Expected {len(FEATURE_COLS)} features, got {len(req.features)}"
         )
-    result = engine.score_session(req.features, req.user_id, req.context)
+    feature_dict = dict(zip(FEATURE_COLS, req.features))
+
+    result = engine.score_session(
+        feature_dict,
+        req.user_id,
+        req.context,
+        use_window=True
+    )
     return result
 
 
@@ -99,8 +111,9 @@ async def replay_user(req: ReplayRequest):
             status_code=404,
             detail=f"No data for user {req.user_id}"
         )
-    result = engine.score_session(features, req.user_id, req.context)
-    result['mode'] = 'dataset_replay'
+    feature_dict = dict(zip(FEATURE_COLS, features))
+    result = engine.score_session(feature_dict, req.user_id, req.context,
+                                  use_window=False)
     return result
 
 
@@ -128,10 +141,9 @@ async def system_status():
         "alert_reductions":     engine.ALERT_REDUCTIONS,
     }
 
-
 @app.get("/api/anomaly-users")
 async def get_anomaly_users():
-    profiles_data = joblib.load("models/user_profiles.pkl")
+    profiles_data = joblib.load(MODELS_DIR / "user_profiles.pkl")
     results = []
     for uid, data in profiles_data.items():
         features = np.array(data['features']).reshape(1, -1)
@@ -142,11 +154,47 @@ async def get_anomaly_users():
     results.sort(key=lambda x: x['if_score'])
     return {"anomaly_users": results, "total": len(results)}
 
+class EnrollRequest(BaseModel):
+    user_id:  int
+    features: list[float]
 
-# ** Run **************************************************-
+@app.post("/api/enroll")
+async def enroll_user(req: EnrollRequest):
+    """
+    Enroll a live user from browser-captured keystrokes.
+    Saves their feature vector into the engine's user_profiles.
+    """
+    feature_weights = joblib.load(MODELS_DIR / "feature_weights_v2.pkl") \
+        if os.path.exists(MODELS_DIR / "feature_weights_v2.pkl") else np.ones(len(FEATURE_COLS))
+
+    # Pad/trim features to match training size
+    features = np.array(req.features[:len(FEATURE_COLS)])
+    if len(features) < len(FEATURE_COLS):
+        features = np.pad(features, (0, len(FEATURE_COLS) - len(features)))
+
+    weighted  = features * feature_weights
+    scaled    = engine.scaler.transform(weighted.reshape(1, -1))[0]
+
+    engine.user_profiles[req.user_id] = {
+        'features':      scaled.tolist(),
+        'raw_features':  req.features,
+        'feature_names': FEATURE_COLS,
+        'if_score':      float(engine.iso_forest.score_samples(scaled.reshape(1,-1))[0]),
+        'svm_score':     float(engine.oc_svm.score_samples(scaled.reshape(1,-1))[0]),
+    }
+    engine.reset_user_window(req.user_id)
+
+    return {
+        "status":  "enrolled",
+        "user_id": req.user_id,
+        "message": "Behavioral profile built from live keystrokes"
+    }
+
+# *- Run *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 if __name__ == "__main__":
     import uvicorn
     print("\nNeuraShield Zero-Trust Auth Layer starting...")
     print("Dashboard: http://localhost:8000")
     print("API docs:  http://localhost:8000/docs\n")
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

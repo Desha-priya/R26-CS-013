@@ -5,7 +5,6 @@
 #   2. SVM with tighter nu for subtle boundary detection
 #   3. Per-user deviation scoring added to profiles
 #   4. Feature importance weighting - stronger biometric features weighted more
-# Run once - overwrites models/ with improved versions
 
 import numpy as np
 import pandas as pd
@@ -19,7 +18,7 @@ from sklearn.preprocessing import RobustScaler
 from pathlib import Path
 
 MODELS_DIR  = Path(__file__).parent.parent.parent / "models" / "zero_trust_auth"
-DATA_FILE   = Path(__file__).parent / "user_behavioral_profiles_combined.csv"
+DATA_FILE   = Path(__file__).resolve().parent / "data_processing" / "user_behavioral_profiles_combined.csv"
 
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -29,7 +28,7 @@ FEATURE_COLS = [c for c in df.columns if c != 'user']
 X_raw        = df[FEATURE_COLS].values
 users        = df['user'].values
 
-# ── Improvement 1: Feature weighting ─────────────────────
+# ** Improvement 1: Feature weighting **********************
 # Stronger biometric features get higher weight before scaling.
 # dwell and flight time features are the most personal - weight them more.
 #makes the model more sensitive to the features that matter most.
@@ -52,7 +51,7 @@ for i, col in enumerate(FEATURE_COLS):
 
 X_weighted = X_raw * FEATURE_WEIGHTS
 
-# ── Improvement 2: Better scaler ─────────────────────────
+# ** Improvement 2: Better scaler **************************
 # RobustScaler uses median instead of mean - less affected by outliers
 # This is better for biometric data which has natural outliers
 
@@ -64,7 +63,7 @@ joblib.dump(FEATURE_WEIGHTS, MODELS_DIR / "feature_weights_v2.pkl")
 
 print("Saved improved scaler (RobustScaler) and feature weights")
 
-# ── Improvement 3: Isolation Forest with better tuning ───
+# ** Improvement 3: Isolation Forest with better tuning ****
 # max_features=0.8 - each tree uses 80% of features randomly
 #   → reduces overfitting, better generalisation to subtle anomalies
 # max_samples=0.9  - each tree trained on 90% of data
@@ -86,7 +85,7 @@ print(f"  Score range: {if_scores.min():.4f} to {if_scores.max():.4f}")
 
 joblib.dump(iso_forest, MODELS_DIR / "isolation_forest_v2.pkl")
 
-# ── Improvement 4: One-Class SVM with tighter boundary ───
+# ** Improvement 4: One-Class SVM with tighter boundary ****
 
 # nu=0.03 instead of 0.05 - tighter decision boundary
 #   → catches more subtle anomalies near the boundary
@@ -110,7 +109,7 @@ print(f"  Score range: {svm_scores.min():.4f} to {svm_scores.max():.4f}")
 
 joblib.dump(oc_svm, MODELS_DIR / "oneclass_svm_v2.pkl")
 
-# ── Improvement 5: Save enriched per-user profiles ───────
+# ** Improvement 5: Save enriched per-user profiles ********
 # Each user profile now includes:
 #   - Their scaled feature vector
 #   - Per-feature std deviation (for tighter personal comparison)
@@ -140,7 +139,7 @@ joblib.dump(user_profiles, MODELS_DIR / "user_profiles_v2.pkl")
 
 print(f"Saved enriched profiles for {len(user_profiles)} users")
 
-# ── Quick validation ──────────────────────────────────────
+# ** Quick validation **************************************
 # Test on synthetic anomalies to confirm improvement
 
 print("\nValidating improvements on synthetic anomalies...")

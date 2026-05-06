@@ -4,7 +4,7 @@
 #   - Loads feature_weights.pkl and applies them to live features
 #   - Sliding window: keeps last 3 scores and averages (reduces false positives)
 #   - Per-user personal baseline comparison (tighter personal threshold)
-#   - SVM now triggers at IF > 0.1 (much earlier) — because SVM is stronger in v2
+#   - SVM now triggers at IF > 0.1 (much earlier) : because SVM is stronger in v2
 #   - Combined score weights flipped: SVM 70%, IF 30% (SVM more reliable in v2)
 #   - Time-of-day risk factor (login at 3am = stricter threshold)
 #--------------------------------------------------------------------------------
@@ -12,11 +12,20 @@
 import numpy as np
 import joblib
 import os
+from pathlib import Path
 from datetime import datetime
 from collections import deque
-from pathlib import Path
 
-MODELS_DIR = Path(__file__).parent.parent.parent / "models" / "zero_trust_auth"
+ROOT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT_DIR.parent.parent
+MODELS_DIR = PROJECT_ROOT / "models" / "zero_trust_auth"
+OUTPUT_FILE = ROOT_DIR / "output" / "risk_engine_result.txt"
+
+def log_to_file(text):
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_FILE, "a") as f:
+        f.write(text + "\n")
+
 
 class RiskEngine:
 
@@ -34,7 +43,7 @@ class RiskEngine:
     }
 
     # Alert severity also multiplies the risk score directly
-    # This is correct behaviour — if network is compromised,
+    # This is correct behaviour : if network is compromised,
     # even a slightly suspicious user should be flagged harder
     ALERT_SCORE_BOOST = {
         'network_guardian':         0.08,
@@ -52,13 +61,9 @@ class RiskEngine:
     def __init__(self):
         import logging
         logging.basicConfig(level=logging.INFO)
-
         self.logger = logging.getLogger(__name__)
-
         self.logger.info("Loading models into Risk Engine...")
 
-        MODELS_DIR.mkdir(parents=True, exist_ok=True)
-        
         self.scaler        = joblib.load(MODELS_DIR / "scaler_v2.pkl")
         self.iso_forest    = joblib.load(MODELS_DIR / "isolation_forest_v2.pkl")
         self.oc_svm        = joblib.load(MODELS_DIR / "oneclass_svm_v2.pkl")
@@ -67,7 +72,7 @@ class RiskEngine:
         weights_path = MODELS_DIR / "feature_weights_v2.pkl"
         self.feature_weights = (
             joblib.load(weights_path)
-            if weights_path.exists() else None
+            if os.path.exists(weights_path) else None
         )
 
         self.active_alerts        = {}
@@ -79,7 +84,7 @@ class RiskEngine:
 
         self.logger.info(f"Risk Engine ready. {len(self.user_profiles)} user profiles loaded.")
 
-    # ─────────────────────────────────────────────────────
+    #******************************************************
     def score_session(self, live_features: dict, user_id: int,
                       context: str = 'normal_browsing',
                       use_window: bool = True) -> dict:
@@ -89,6 +94,7 @@ class RiskEngine:
         """
 
         # Step 1: Build feature array from dict (STRICT mode)
+
         if not isinstance(live_features, dict):
             raise TypeError("live_features must be a dict with feature names")
 
@@ -119,7 +125,7 @@ class RiskEngine:
         if_score = self._normalise_if_score(if_raw)
         if_score = if_score ** 1.5
 
-        # Step 4: SVM — triggers at IF > 0.10
+        # Step 4: SVM : triggers at IF > 0.10
         svm_score = 0.0
         svm_used  = False
         svm_raw_val = None
@@ -129,7 +135,7 @@ class RiskEngine:
             svm_score   = svm_score ** 1.5
             svm_used    = True
 
-        # Step 5: Combine — SVM 70% + IF 30%
+        # Step 5: Combine : SVM 70% + IF 30%
         if svm_used:
             combined_score = (0.30 * if_score) + (0.70 * svm_score)
         else:
@@ -141,10 +147,10 @@ class RiskEngine:
         # Step 7: Blend model score + personal deviation
         instant_score = (0.75 * combined_score) + (0.25 * personal_deviation)
 
-        # ── NEW: Step 7b — Alert score boost ──────────────
+        #** NEW: Step 7b : Alert score boost**************
         # Active alerts from other layers add directly to the risk score
         # This means: if network is compromised, even a borderline user
-        # gets pushed over the threshold — which is correct security behaviour
+        # gets pushed over the threshold : which is correct security behaviour
         active = self._get_active_alerts()
         alert_boost = sum(
             self.ALERT_SCORE_BOOST.get(src, 0.0)
@@ -153,7 +159,7 @@ class RiskEngine:
         instant_score = instant_score + alert_boost
         instant_score = float(np.clip(instant_score, 0.0, 1.0))
 
-        # Step 8: Sliding window — ONLY for live sessions
+        # Step 8: Sliding window : ONLY for live sessions
         # For replay demo, skip window so each replay is independent
         if use_window:
             if user_id not in self.score_history:
@@ -172,7 +178,7 @@ class RiskEngine:
             final_score = max(final_score, baseline.get(context, 0.05))
             history.append(final_score)
         else:
-            # Replay mode — use instant score directly, no history influence
+            # Replay mode : use instant score directly, no history influence
             final_score = instant_score
 
         final_score = float(np.clip(final_score, 0.0, 1.0))
@@ -206,7 +212,7 @@ class RiskEngine:
             'mode':               'live' if use_window else 'replay',
         }
 
-    # ─────────────────────────────────────────────────────
+    #******************************************************
     def receive_alert(self, source: str, severity: str = 'medium') -> dict:
         if source not in self.ALERT_REDUCTIONS:
             return {'status': 'error', 'message': f'Unknown source: {source}'}
@@ -214,7 +220,7 @@ class RiskEngine:
             'timestamp': datetime.now(),
             'severity':  severity,
         }
-        self.logger.info(f"[ALERT] {source} — severity: {severity}")
+        self.logger.info(f"[ALERT] {source} : severity: {severity}")
         return {
             'status':        'alert_received',
             'source':        source,
@@ -237,7 +243,7 @@ class RiskEngine:
         if user_id in self.score_history:
             del self.score_history[user_id]
 
-    # ─────────────────────────────────────────────────────
+    #******************************************************
     def _get_adaptive_threshold(self, context: str) -> float:
         base            = self.CONTEXT_THRESHOLDS.get(context, 0.65)
         self.clear_expired_alerts()
@@ -286,37 +292,44 @@ class RiskEngine:
         else:              return 'high'
 
 
-# ── TEST ──────────────────────────────────────────────────
+#** TEST**************************************************
 if __name__ == "__main__":
     engine = RiskEngine()
 
-    # ── Get feature schema ───────────────────────────────
     feature_names = engine.feature_names
 
     def to_feature_dict(feature_list):
         return dict(zip(feature_names, feature_list))
 
-    # ────────────────────────────────────────────────────
-    print("\n--- TEST 1: Normal user, no alerts ---")
+    # Clear previous log
+    open(OUTPUT_FILE, "w").close()
+
+    print("Running Risk Engine tests...")
+
+    #****************************************************
+    print("Test 1 running...")
+    log_to_file("\n--- TEST 1: Normal user, no alerts ---")
 
     user1_list = engine.user_profiles[1]['raw_features']
     user1 = to_feature_dict(user1_list)
 
     r = engine.score_session(user1, 1, 'normal_browsing', use_window=False)
-    print(f"Risk: {r['risk_percent']}% | Decision: {r['decision']} | Threshold: {r['adaptive_threshold']}")
+    log_to_file(f"Risk: {r['risk_percent']}% | Decision: {r['decision']} | Threshold: {r['adaptive_threshold']}")
 
-    # ────────────────────────────────────────────────────
-    print("\n--- TEST 2: All 3 alerts active, normal user ---")
+    #****************************************************
+    print("Test 2 running...")
+    log_to_file("\n--- TEST 2: All 3 alerts active, normal user ---")
 
     engine.receive_alert('network_guardian', 'high')
     engine.receive_alert('ransomware_killer', 'high')
     engine.receive_alert('content_threat_detection', 'high')
 
     r = engine.score_session(user1, 1, 'normal_browsing', use_window=False)
-    print(f"Risk: {r['risk_percent']}% | Alert boost: {r['alert_boost']} | Threshold: {r['adaptive_threshold']} | Decision: {r['decision']}")
+    log_to_file(f"Risk: {r['risk_percent']}% | Alert boost: {r['alert_boost']} | Threshold: {r['adaptive_threshold']} | Decision: {r['decision']}")
 
-    # ────────────────────────────────────────────────────
-    print("\n--- TEST 3: All alerts, anomaly user, sensitive context ---")
+    #****************************************************
+    print("Test 3 running...")
+    log_to_file("\n--- TEST 3: All alerts, anomaly user, sensitive context ---")
 
     anomaly_uid = None
     for uid, data in engine.user_profiles.items():
@@ -330,30 +343,35 @@ if __name__ == "__main__":
         anomaly_features = to_feature_dict(anomaly_list)
 
         r = engine.score_session(anomaly_features, anomaly_uid, 'sensitive_access', use_window=False)
-        print(f"Anomaly user {anomaly_uid} | Risk: {r['risk_percent']}% | Decision: {r['decision']} | Threshold: {r['adaptive_threshold']}")
+        log_to_file(f"Anomaly user {anomaly_uid} | Risk: {r['risk_percent']}% | Decision: {r['decision']} | Threshold: {r['adaptive_threshold']}")
 
-    # ────────────────────────────────────────────────────
-    print("\n--- TEST 4: Simulated attacker, all alerts ---")
+    #****************************************************
+    print("Test 4 running...")
+    log_to_file("\n--- TEST 4: Simulated attacker, all alerts ---")
 
     np.random.seed(42)
     fake_list = list(np.random.uniform(0, 5, len(feature_names)))
     fake_features = to_feature_dict(fake_list)
 
     r = engine.score_session(fake_features, 1, 'normal_browsing', use_window=False)
-    print(f"Risk: {r['risk_percent']}% | Decision: {r['decision']}")
+    log_to_file(f"Risk: {r['risk_percent']}% | Decision: {r['decision']}")
 
-    # ────────────────────────────────────────────────────
-    print("\n--- TEST 5: Live mode window test (3 consecutive calls) ---")
+    #****************************************************
+    print("Test 5 running...")
+    log_to_file("\n--- TEST 5: Live mode window test (3 consecutive calls) ---")
 
-    engine.active_alerts = {}  # clear alerts
+    engine.active_alerts = {}
 
     user_live = to_feature_dict(user1_list)
 
     for i in range(3):
         r = engine.score_session(user_live, 999, 'normal_browsing', use_window=True)
-        print(f"  Call {i+1}: Risk: {r['risk_percent']}% | Window size: {r['window_size']}")
+        log_to_file(f"Call {i+1}: Risk: {r['risk_percent']}% | Window size: {r['window_size']}")
 
-    # ────────────────────────────────────────────────────
-    print("\n--- SANITY CHECK ---")
-    print("Total features expected:", len(feature_names))
-    print("User feature count:", len(user1))
+    #****************************************************
+    print("Final sanity check...")
+    log_to_file("\n--- SANITY CHECK ---")
+    log_to_file(f"Total features expected: {len(feature_names)}")
+    log_to_file(f"User feature count: {len(user1)}")
+
+    print("Done. Results saved to output/risk_engine_result.txt")
