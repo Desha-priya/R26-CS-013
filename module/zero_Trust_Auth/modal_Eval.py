@@ -19,11 +19,10 @@ from sklearn.metrics import (
 )
 
 # -* Config -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-ROOT_DIR     = Path(__file__).resolve().parent
-PROJECT_ROOT = ROOT_DIR.parent.parent
-MODELS_DIR   = PROJECT_ROOT / "models" / "zero_trust_auth"
-DATA_FILE    = ROOT_DIR / "data_processing" / "user_behavioral_profiles_combined.csv"
-RESULTS_DIR  = ROOT_DIR / "Eval_results"
+ROOT_PATH    = Path(__file__).parent.parent.parent
+MODELS_DIR   = ROOT_PATH / "models" / "zero_trust_auth"
+DATA_FILE    = ROOT_PATH / "module" / "zero_Trust_Auth" / "data_processing" / "user_behavioral_profiles_combined.csv"
+RESULTS_DIR  = ROOT_PATH / "module" / "zero_Trust_Auth" / "Eval_results"
 
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 

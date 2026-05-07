@@ -6,471 +6,148 @@
 <title>NeuraShield - Zero-Trust Auth Layer</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:        #080b12;
-  --bg2:       #0d1120;
-  --bg3:       #111827;
-  --border:    #1e2a3a;
-  --border2:   #243044;
-  --text:      #e2e8f0;
-  --muted:     #4a5568;
-  --muted2:    #6b7280;
-  --purple:    #8b5cf6;
-  --purple2:   #6d28d9;
-  --teal:      #14b8a6;
-  --green:     #10b981;
-  --green2:    #065f46;
-  --red:       #ef4444;
-  --red2:      #7f1d1d;
-  --amber:     #f59e0b;
-  --amber2:    #78350f;
-  --blue:      #3b82f6;
-  --mono:      'JetBrains Mono', monospace;
-  --sans:      'Syne', sans-serif;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── SCANLINE OVERLAY ── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,.03) 2px,
-    rgba(0,0,0,.03) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* ── HEADER ── */
-header {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  padding: 0 28px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.logo-icon {
-  width: 28px; height: 28px;
-  background: var(--purple);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-  box-shadow: 0 0 16px rgba(139,92,246,.4);
-}
-.logo h1 {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -.02em;
-  color: var(--text);
-}
-.logo span {
-  font-size: 11px;
-  color: var(--muted2);
-  font-family: var(--mono);
-  font-weight: 400;
-}
-.header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.pill {
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid var(--border2);
-  color: var(--muted2);
-  background: var(--bg3);
-  white-space: nowrap;
-}
-.pill.online { border-color: var(--green); color: var(--green); background: rgba(16,185,129,.08); }
-.pill.alert  { border-color: var(--red);   color: var(--red);   background: rgba(239,68,68,.08); }
-.pill.info   { border-color: var(--purple); color: var(--purple); background: rgba(139,92,246,.08); }
-
-/* ── TABS ── */
-.tabs {
-  display: flex;
-  gap: 2px;
-  padding: 12px 28px 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg2);
-}
-.tab {
-  font-family: var(--mono);
-  font-size: 12px;
-  padding: 8px 18px;
-  border-radius: 6px 6px 0 0;
-  cursor: pointer;
-  color: var(--muted2);
-  background: transparent;
-  border: 1px solid transparent;
-  border-bottom: none;
-  transition: all .15s;
-  letter-spacing: .02em;
-}
-.tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
-.tab.active {
-  background: var(--bg);
-  color: var(--text);
-  border-color: var(--border);
-}
-.tab-content { display: none; padding: 20px 28px; }
-.tab-content.active { display: grid; }
-#tab-replay { grid-template-columns: 320px 1fr; gap: 16px; }
-#tab-live   { grid-template-columns: 1fr 1fr; gap: 16px; }
-
-/* ── CARDS ── */
-.card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  position: relative;
-  overflow: hidden;
-}
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,.3), transparent);
-}
-.card-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .12em;
-  color: var(--muted2);
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-title .dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--purple);
-  box-shadow: 0 0 6px var(--purple);
-}
-.full { grid-column: 1 / -1; }
-
-/* ── FORM ELEMENTS ── */
-select, textarea {
-  font-family: var(--mono);
-  font-size: 13px;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 8px 12px;
-  width: 100%;
-  margin-bottom: 8px;
-  transition: border-color .2s;
-}
-select:focus, textarea:focus { outline: none; border-color: var(--purple); }
-select option { background: var(--bg3); }
-label.field-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted2);
-  display: block;
-  margin-bottom: 4px;
-  letter-spacing: .04em;
-}
-
-/* ── BUTTONS ── */
-.btn {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid;
-  cursor: pointer;
-  transition: all .15s;
-  letter-spacing: .03em;
-  white-space: nowrap;
-}
-.btn:disabled { opacity: .35; cursor: not-allowed; }
-.btn-primary  { background: var(--purple);  border-color: var(--purple);  color: white; }
-.btn-primary:hover:not(:disabled) { background: var(--purple2); box-shadow: 0 0 16px rgba(139,92,246,.4); }
-.btn-danger   { background: var(--red);     border-color: var(--red);     color: white; }
-.btn-danger:hover:not(:disabled)  { background: #dc2626; box-shadow: 0 0 16px rgba(239,68,68,.4); }
-.btn-success  { background: var(--green);   border-color: var(--green);   color: white; }
-.btn-success:hover:not(:disabled) { background: #059669; box-shadow: 0 0 16px rgba(16,185,129,.4); }
-.btn-amber    { background: var(--amber);   border-color: var(--amber);   color: #1c1007; }
-.btn-ghost    { background: transparent;    border-color: var(--border2); color: var(--muted2); }
-.btn-ghost:hover { border-color: var(--muted2); color: var(--text); }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-
-/* ── SCORE ROWS ── */
-.srow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-}
-.srow:last-child { border-bottom: none; }
-.srow .lbl { color: var(--muted2); font-family: var(--mono); }
-.srow .val { font-family: var(--mono); font-weight: 600; color: var(--text); }
-
-/* ── GAUGE ── */
-.gauge-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-}
-.gauge-svg-wrap {
-  position: relative;
-  width: 180px;
-  height: 100px;
-  overflow: hidden;
-}
-.gauge-svg-wrap svg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 180px;
-  height: 180px;
-}
-.gauge-pct {
-  font-family: var(--mono);
-  font-size: 38px;
-  font-weight: 700;
-  margin-top: 4px;
-  transition: color .5s;
-  letter-spacing: -.03em;
-}
-.gauge-sub {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted2);
-  text-align: center;
-  margin-top: 2px;
-}
-.decision-chip {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 99px;
-  margin-top: 6px;
-  border: 1px solid var(--border2);
-  color: var(--muted2);
-  background: var(--bg3);
-  letter-spacing: .04em;
-}
-.decision-chip.allow { border-color: var(--green); color: var(--green); background: rgba(16,185,129,.1); }
-.decision-chip.warn  { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,.1); }
-.decision-chip.lock  { border-color: var(--red);   color: var(--red);   background: rgba(239,68,68,.1); }
-
-/* ── THRESHOLD BAR ── */
-.tbar-section { width: 100%; margin-top: 12px; }
-.tbar-labels  { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-bottom: 4px; }
-.tbar         { height: 6px; background: var(--bg3); border-radius: 3px; position: relative; overflow: visible; }
-.tbar-fill    { height: 6px; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1), background .5s; }
-.tbar-marker  { position: absolute; top: -5px; width: 2px; height: 16px; background: white; border-radius: 2px; transition: left .6s cubic-bezier(.4,0,.2,1); box-shadow: 0 0 6px rgba(255,255,255,.6); }
-
-/* ── ALERT BUTTONS ── */
-.alert-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border2);
-  background: var(--bg);
-  cursor: pointer;
-  transition: all .15s;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--muted2);
-}
-.alert-row:hover { border-color: var(--red); color: var(--text); }
-.alert-row.active { border-color: var(--red); color: var(--red); background: rgba(239,68,68,.07); }
-.alert-row .alert-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.alert-row.active .alert-dot { background: var(--red); box-shadow: 0 0 8px var(--red); animation: pulse 1.2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-.alert-source { font-weight: 600; }
-.alert-effect { margin-left: auto; font-size: 10px; color: var(--muted); }
-.alert-row.active .alert-effect { color: var(--red); }
-
-/* ── LOG ── */
-.log-area {
-  font-family: var(--mono);
-  font-size: 11px;
-  max-height: 160px;
-  overflow-y: auto;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px;
-}
-.log-area::-webkit-scrollbar { width: 4px; }
-.log-area::-webkit-scrollbar-track { background: transparent; }
-.log-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.log-entry { padding: 2px 0; color: var(--muted2); border-bottom: 1px solid rgba(255,255,255,.03); }
-.log-entry.low    { color: var(--green); }
-.log-entry.medium { color: var(--amber); }
-.log-entry.high   { color: var(--red); }
-.log-ts { color: var(--muted); margin-right: 6px; }
-
-/* ── ENROLLMENT ── */
-.enroll-textarea {
-  height: 100px;
-  font-size: 14px;
-  line-height: 1.7;
-  resize: none;
-  background: var(--bg);
-}
-.enroll-textarea.done   { border-color: var(--green) !important; }
-.enroll-textarea.active { border-color: var(--purple) !important; }
-.monitor-textarea {
-  height: 120px;
-  font-size: 14px;
-  line-height: 1.7;
-  resize: none;
-}
-.monitor-textarea:disabled { opacity: .4; cursor: not-allowed; }
-.progress-wrap { margin-bottom: 10px; }
-.progress-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted2); margin-bottom: 5px; }
-.progress-bar   { height: 4px; background: var(--bg3); border-radius: 2px; }
-.progress-fill  { height: 4px; border-radius: 2px; background: var(--purple); transition: width .3s; }
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
-.stat-box  { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
-.stat-box .stat-label { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-bottom: 2px; }
-.stat-box .stat-val   { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); }
-.enroll-msg { font-family: var(--mono); font-size: 12px; min-height: 18px; margin-top: 6px; }
-.phase-tag {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: .06em;
-  margin-left: 8px;
-}
-.phase-pending { background: rgba(139,92,246,.15); color: var(--purple); border: 1px solid rgba(139,92,246,.3); }
-.phase-done    { background: rgba(16,185,129,.12); color: var(--green);  border: 1px solid rgba(16,185,129,.3); }
-
-/* ── MODAL ── */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.8);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: var(--bg2);
-  border: 1px solid var(--red);
-  border-radius: 14px;
-  padding: 32px;
-  max-width: 380px;
-  width: 90%;
-  text-align: center;
-  box-shadow: 0 0 60px rgba(239,68,68,.2);
-  animation: modal-in .2s ease;
-}
-@keyframes modal-in { from{transform:scale(.94);opacity:0} to{transform:scale(1);opacity:1} }
-.modal-icon { font-size: 36px; margin-bottom: 12px; }
-.modal h2   { font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
-.modal p    { font-size: 13px; color: var(--muted2); margin-bottom: 16px; line-height: 1.6; }
-.modal-info {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 20px;
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--muted2);
-}
-.modal-info strong { color: var(--red); }
-.modal-btns { display: flex; gap: 10px; justify-content: center; }
-
-/* ── RIGHT PANEL LAYOUT for Replay tab ── */
-.right-panel { display: flex; flex-direction: column; gap: 16px; }
-.gauge-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+:root{--bg:#080b12;--bg2:#0d1120;--bg3:#111827;--border:#1e2a3a;--border2:#243044;--text:#e2e8f0;--muted:#4a5568;--muted2:#6b7280;--purple:#8b5cf6;--purple2:#6d28d9;--teal:#14b8a6;--green:#10b981;--green2:#065f46;--red:#ef4444;--red2:#7f1d1d;--amber:#f59e0b;--amber2:#78350f;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:28px;height:28px;background:var(--purple);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 16px rgba(139,92,246,.4)}
+.logo h1{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.logo span{font-size:11px;color:var(--muted2);font-family:var(--mono);font-weight:400}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--muted2);background:var(--bg3);white-space:nowrap}
+.pill.online{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.pill.alert{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08)}
+.pill.info{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,.08)}
+.tabs{display:flex;gap:2px;padding:12px 28px 0;border-bottom:1px solid var(--border);background:var(--bg2)}
+.tab{font-family:var(--mono);font-size:12px;padding:8px 18px;border-radius:6px 6px 0 0;cursor:pointer;color:var(--muted2);background:transparent;border:1px solid transparent;border-bottom:none;transition:all .15s;letter-spacing:.02em}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.tab.active{background:var(--bg);color:var(--text);border-color:var(--border)}
+.tab-content{display:none;padding:20px 28px}
+.tab-content.active{display:grid}
+#tab-replay{grid-template-columns:320px 1fr;gap:16px}
+#tab-live{grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.3),transparent)}
+.card-title{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted2);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title .dot{width:5px;height:5px;border-radius:50%;background:var(--purple);box-shadow:0 0 6px var(--purple)}
+.full{grid-column:1/-1}
+select,textarea{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:8px 12px;width:100%;margin-bottom:8px;transition:border-color .2s}
+select:focus,textarea:focus{outline:none;border-color:var(--purple)}
+select option{background:var(--bg3)}
+label.fl{font-family:var(--mono);font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;letter-spacing:.04em}
+.btn{font-family:var(--mono);font-size:12px;font-weight:600;padding:8px 16px;border-radius:6px;border:1px solid;cursor:pointer;transition:all .15s;letter-spacing:.03em;white-space:nowrap}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--purple);border-color:var(--purple);color:white}
+.btn-primary:hover:not(:disabled){background:var(--purple2);box-shadow:0 0 16px rgba(139,92,246,.4)}
+.btn-danger{background:var(--red);border-color:var(--red);color:white}
+.btn-danger:hover:not(:disabled){background:#dc2626;box-shadow:0 0 16px rgba(239,68,68,.4)}
+.btn-success{background:var(--green);border-color:var(--green);color:white}
+.btn-success:hover:not(:disabled){background:#059669;box-shadow:0 0 16px rgba(16,185,129,.4)}
+.btn-amber{background:var(--amber);border-color:var(--amber);color:#1c1007}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--muted2)}
+.btn-ghost:hover{border-color:var(--muted2);color:var(--text)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.srow:last-child{border-bottom:none}
+.srow .lbl{color:var(--muted2);font-family:var(--mono)}
+.srow .val{font-family:var(--mono);font-weight:600;color:var(--text)}
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:8px 0}
+.gauge-svg-wrap{position:relative;width:180px;height:100px;overflow:hidden}
+.gauge-svg-wrap svg{position:absolute;top:0;left:0;width:180px;height:180px}
+.gauge-pct{font-family:var(--mono);font-size:38px;font-weight:700;margin-top:4px;transition:color .5s;letter-spacing:-.03em}
+.gauge-sub{font-family:var(--mono);font-size:11px;color:var(--muted2);text-align:center;margin-top:2px}
+.dchip{font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;margin-top:6px;border:1px solid var(--border2);color:var(--muted2);background:var(--bg3);letter-spacing:.04em}
+.dchip.allow{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.1)}
+.dchip.warn{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.1)}
+.dchip.lock{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+.tbar-section{width:100%;margin-top:12px}
+.tbar-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted2);margin-bottom:4px}
+.tbar{height:6px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible}
+.tbar-fill{height:6px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1),background .5s}
+.tbar-marker{position:absolute;top:-5px;width:2px;height:16px;background:white;border-radius:2px;transition:left .6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(255,255,255,.6)}
+.alert-row{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:6px;border-radius:6px;border:1px solid var(--border2);background:var(--bg);cursor:pointer;transition:all .15s;font-family:var(--mono);font-size:12px;color:var(--muted2)}
+.alert-row:hover{border-color:var(--red);color:var(--text)}
+.alert-row.active{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.07)}
+.alert-row .adot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.alert-row.active .adot{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.asrc{font-weight:600}
+.aeff{margin-left:auto;font-size:10px;color:var(--muted)}
+.alert-row.active .aeff{color:var(--red)}
+.log-area{font-family:var(--mono);font-size:11px;max-height:160px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px}
+.log-area::-webkit-scrollbar{width:4px}
+.log-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.log-entry{padding:2px 0;color:var(--muted2);border-bottom:1px solid rgba(255,255,255,.03)}
+.log-entry.low{color:var(--green)}
+.log-entry.medium{color:var(--amber)}
+.log-entry.high{color:var(--red)}
+.log-ts{color:var(--muted);margin-right:6px}
+.etarea{height:100px;font-size:14px;line-height:1.7;resize:none;background:var(--bg)}
+.etarea.done{border-color:var(--green)!important}
+.mtarea{height:120px;font-size:14px;line-height:1.7;resize:none}
+.mtarea:disabled{opacity:.4;cursor:not-allowed}
+.prog-wrap{margin-bottom:10px}
+.prog-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted2);margin-bottom:5px}
+.prog-bar{height:4px;background:var(--bg3);border-radius:2px}
+.prog-fill{height:4px;border-radius:2px;background:var(--purple);transition:width .3s}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.stat-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.stat-box .sl{font-family:var(--mono);font-size:10px;color:var(--muted2);margin-bottom:2px}
+.stat-box .sv{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text)}
+.emsg{font-family:var(--mono);font-size:12px;min-height:18px;margin-top:6px}
+.ptag{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;letter-spacing:.06em;margin-left:8px}
+.ptag-p{background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3)}
+.ptag-d{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--red);border-radius:14px;padding:32px;max-width:400px;width:90%;text-align:center;box-shadow:0 0 60px rgba(239,68,68,.2);animation:min .2s ease}
+@keyframes min{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-icon{font-size:36px;margin-bottom:12px}
+.modal h2{font-size:18px;font-weight:700;color:var(--red);margin-bottom:6px}
+.modal p{font-size:13px;color:var(--muted2);margin-bottom:16px;line-height:1.6}
+.modal-info{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:20px;font-family:var(--mono);font-size:13px;color:var(--muted2)}
+.modal-info strong{color:var(--red)}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+.rp{display:flex;flex-direction:column;gap:16px}
+.gc{display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* mouse capture indicator */
+.mouse-indicator{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:4px;border:1px solid var(--border2);color:var(--muted2);display:inline-flex;align-items:center;gap:6px}
+.mouse-indicator.active{border-color:var(--teal);color:var(--teal);background:rgba(20,184,166,.08)}
+.mouse-dot{width:5px;height:5px;border-radius:50%;background:var(--muted)}
+.mouse-indicator.active .mouse-dot{background:var(--teal);box-shadow:0 0 6px var(--teal);animation:pulse 1s infinite}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <div class="logo">
     <div class="logo-icon">🛡</div>
-    <div>
-      <h1>NeuraShield</h1>
-      <span>Zero-Trust Authentication Layer</span>
-    </div>
+    <div><h1>NeuraShield</h1><span>Zero-Trust Authentication Layer</span></div>
   </div>
   <div class="header-right">
-    <span class="pill online" id="sys-status">● ONLINE</span>
+    <span class="pill online">● ONLINE</span>
     <span class="pill" id="alert-pill">0 ALERTS</span>
     <span class="pill info" id="enrolled-pill" style="display:none">● LIVE USER</span>
   </div>
 </header>
 
-<!-- TABS -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('replay')">01 / DATASET REPLAY</div>
   <div class="tab"        onclick="switchTab('live')">02 / LIVE ENROLLMENT</div>
 </div>
 
-<!-- ════════════════════════════════════════
-     TAB 1 - DATASET REPLAY
-════════════════════════════════════════ -->
+<!-- ═══ TAB 1 - DATASET REPLAY ═══ -->
 <div class="tab-content active" id="tab-replay">
 
-  <!-- LEFT: controls + alerts + log -->
   <div style="display:flex;flex-direction:column;gap:16px;">
 
-    <!-- Session control -->
     <div class="card">
       <div class="card-title"><span class="dot"></span>SESSION CONTROL</div>
-      <label class="field-label">ENROLLED USER</label>
+      <label class="fl">ENROLLED USER</label>
       <select id="user-select"></select>
-      <label class="field-label">SESSION CONTEXT</label>
+      <label class="fl">SESSION CONTEXT</label>
       <select id="ctx-select">
         <option value="normal_browsing">Normal browsing - threshold 0.65</option>
         <option value="sensitive_access">Sensitive file access - threshold 0.40</option>
@@ -484,175 +161,142 @@ label.field-label {
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="resetAll()">↺ RESET</button>
       </div>
-
-      <!-- Score breakdown -->
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
         <div class="srow"><span class="lbl">IF score</span><span class="val" id="v-if">-</span></div>
         <div class="srow"><span class="lbl">SVM score</span><span class="val" id="v-svm">-</span></div>
         <div class="srow"><span class="lbl">Personal deviation</span><span class="val" id="v-dev">-</span></div>
         <div class="srow"><span class="lbl">Alert boost</span><span class="val" id="v-boost">-</span></div>
         <div class="srow"><span class="lbl">Adaptive threshold</span><span class="val" id="v-thresh">-</span></div>
-        <div class="srow"><span class="lbl">SVM activated</span><span class="val" id="v-svm-used">-</span></div>
+        <div class="srow"><span class="lbl">SVM activated</span><span class="val" id="v-svmu">-</span></div>
+        <div class="srow"><span class="lbl">Mode</span><span class="val" id="v-mode">-</span></div>
       </div>
     </div>
 
-    <!-- Cross-layer alerts -->
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>CROSS-LAYER ALERTS </div>
-      <p style="font-size:11px;color:var(--muted2);font-family:var(--mono);margin-bottom:10px;line-height:1.5">
-        Alerts lower the threshold AND boost the risk score simultaneously.
-      </p>
-      <div class="alert-row" id="al-net" onclick="toggleAlert('network_guardian','al-net')">
-        <span class="alert-dot"></span>
-        <span class="alert-source">NETWORK GUARDIAN</span>
-        <span class="alert-effect">−0.10 thresh / +0.08 score</span>
-      </div>
-      <div class="alert-row" id="al-ran" onclick="toggleAlert('ransomware_killer','al-ran')">
-        <span class="alert-dot"></span>
-        <span class="alert-source">RANSOMWARE KILLER</span>
-        <span class="alert-effect">−0.15 thresh / +0.12 score</span>
-      </div>
-      <div class="alert-row" id="al-con" onclick="toggleAlert('content_threat_detection','al-con')">
-        <span class="alert-dot"></span>
-        <span class="alert-source">CONTENT THREAT</span>
-        <span class="alert-effect">−0.08 thresh / +0.06 score</span>
-      </div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:6px" onclick="clearAllAlerts()">CLEAR ALL ALERTS</button>
-    </div>
-
-
-  </div>
-
-  <!-- RIGHT: gauge + threshold bar -->
-  <div class="right-panel">
-
-    <div class="card gauge-card">
-      <div class="card-title"><span class="dot"></span>RISK SCORE</div>
-      <div class="gauge-wrap">
-        <div class="gauge-svg-wrap">
-          <svg viewBox="0 0 180 180">
-            <path d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--bg3)" stroke-width="16" stroke-linecap="round"/>
-            <path id="g-arc" d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round"
-                  stroke-dasharray="226" stroke-dashoffset="226"
-                  style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s"/>
-          </svg>
-        </div>
-        <div class="gauge-pct" id="g-pct" style="color:var(--green)">-</div>
-        <div class="gauge-sub" id="g-sub">Select a user and press REPLAY</div>
-        <div class="decision-chip" id="g-chip">WAITING</div>
-      </div>
-      <div class="tbar-section">
-        <div class="tbar-labels">
-          <span>RISK</span>
-          <span id="thresh-label">THRESHOLD -</span>
-        </div>
-        <div class="tbar">
-          <div class="tbar-fill" id="t-fill" style="width:0%;background:var(--green)"></div>
-          <div class="tbar-marker" id="t-mark" style="left:65%"></div>
-        </div>
-        <div class="tbar-labels" style="margin-top:3px">
-          <span>0.0 safe</span><span>1.0 danger</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- How it works panel -->
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>HOW SCORING WORKS</div>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.8">
-        <div>1. Features → weighted → scaled</div>
-        <div>2. Isolation Forest → quick anomaly check</div>
-        <div>3. IF suspicious → One-Class SVM → deep check</div>
-        <div>4. Personal deviation from enrolled profile</div>
-        <div>5. <span style="color:var(--purple);font-weight:600">+ Alert boost</span> from other layers</div>
-        <div>6. <span style="color:var(--purple);font-weight:600">Adaptive threshold</span> = context − alerts</div>
-        <div>7. Score vs threshold → allow / warn / auth</div>
-      </div>
-    </div>
-    
-    <!-- Log -->
     <div class="card">
       <div class="card-title"><span class="dot"></span>AUDIT LOG</div>
       <div class="log-area" id="log-replay"><div class="log-entry">System initialised.</div></div>
     </div>
   </div>
 
+  <div class="rp">
+    <div class="card gc">
+      <div class="card-title"><span class="dot"></span>RISK SCORE</div>
+      <div class="gauge-wrap">
+        <div class="gauge-svg-wrap">
+          <svg viewBox="0 0 180 180">
+            <path d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--bg3)" stroke-width="16" stroke-linecap="round"/>
+            <path id="g-arc" d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226" style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+          </svg>
+        </div>
+        <div class="gauge-pct" id="g-pct" style="color:var(--green)">-</div>
+        <div class="gauge-sub" id="g-sub">Select a user and press REPLAY</div>
+        <div class="dchip" id="g-chip">WAITING</div>
+      </div>
+      <div class="tbar-section">
+        <div class="tbar-labels"><span>RISK</span><span id="thresh-label">THRESHOLD -</span></div>
+        <div class="tbar">
+          <div class="tbar-fill" id="t-fill" style="width:0%;background:var(--green)"></div>
+          <div class="tbar-marker" id="t-mark" style="left:65%"></div>
+        </div>
+        <div class="tbar-labels" style="margin-top:3px"><span>0.0 safe</span><span>1.0 danger</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>CROSS-LAYER ALERTS <span style="margin-left:auto;font-size:9px;color:var(--muted)">Dual effect</span></div>
+      <p style="font-size:11px;color:var(--muted2);font-family:var(--mono);margin-bottom:10px;line-height:1.5">Each alert lowers the threshold AND boosts the risk score simultaneously.</p>
+      <div class="alert-row" id="al-ne" onclick="toggleAlert('network_guardian','al-ne')">
+        <span class="adot"></span><span class="asrc">NETWORK GUARDIAN</span><span class="aeff">−0.10 thresh / +0.10 score</span>
+      </div>
+      <div class="alert-row" id="al-ra" onclick="toggleAlert('ransomware_killer','al-ra')">
+        <span class="adot"></span><span class="asrc">RANSOMWARE KILLER</span><span class="aeff">−0.15 thresh / +0.15 score</span>
+      </div>
+      <div class="alert-row" id="al-co" onclick="toggleAlert('content_threat_detection','al-co')">
+        <span class="adot"></span><span class="asrc">CONTENT THREAT</span><span class="aeff">−0.08 thresh / +0.08 score</span>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px" onclick="clearAllAlerts()">CLEAR ALL ALERTS</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>SCORING PIPELINE</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.9">
+        <div>1. Features → weighted → scaled</div>
+        <div>2. Isolation Forest → quick check (AUC 0.94)</div>
+        <div>3. IF suspicious → One-Class SVM → deep check (AUC 0.997)</div>
+        <div>4. Personal deviation from enrolled profile</div>
+        <div>5. <span style="color:var(--red);font-weight:600">+ Alert boost</span> from active cross-layer alerts</div>
+        <div>6. <span style="color:var(--purple);font-weight:600">Adaptive threshold</span> = context base − alert drops</div>
+        <div>7. Score vs threshold → allow / warn / step-up auth</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     TAB 2 - LIVE ENROLLMENT
-════════════════════════════════════════ -->
+<!-- ═══ TAB 2 - LIVE ENROLLMENT ═══ -->
 <div class="tab-content" id="tab-live">
 
-  <!-- Phase 1: Enrollment -->
   <div class="card">
     <div class="card-title">
       <span class="dot"></span>PHASE 1 - ENROLLMENT
-      <span class="phase-tag phase-pending" id="phase-tag">NOT ENROLLED</span>
+      <span class="ptag ptag-p" id="phase-tag">NOT ENROLLED</span>
     </div>
-    <p style="font-family:var(--mono);font-size:11px;color:var(--muted2);margin-bottom:12px;line-height:1.6">
-      Type naturally below. We capture your keystroke <span style="color:var(--purple)">timing patterns only</span> - not the text itself.
-      Need <span style="color:var(--purple)" id="ks-target">80</span> keystrokes minimum.
+    <p style="font-family:var(--mono);font-size:11px;color:var(--muted2);margin-bottom:10px;line-height:1.6">
+      Type naturally. We capture <span style="color:var(--purple)">timing patterns only</span> - not the text.
+      Need <span style="color:var(--purple)">80</span> keystrokes minimum.
     </p>
-
-    <div class="progress-wrap">
-      <div class="progress-label">
-        <span>KEYSTROKES CAPTURED</span>
-        <span id="ks-count" style="color:var(--purple)">0 / 80</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" id="enroll-prog" style="width:0%"></div></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span class="mouse-indicator" id="mouse-ind">
+        <span class="mouse-dot"></span>MOUSE CAPTURE OFF
+      </span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted2)" id="mouse-stats"></span>
     </div>
-
-    <textarea class="enroll-textarea" id="enroll-box"
-      placeholder="Type anything here naturally - sentences, random words, whatever feels natural.
-The system only sees your timing rhythm, not your words."></textarea>
-
+    <div class="prog-wrap">
+      <div class="prog-label"><span>KEYSTROKES</span><span id="ks-count" style="color:var(--purple)">0 / 80</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="enroll-prog" style="width:0%"></div></div>
+    </div>
+    <textarea class="etarea" id="enroll-box" placeholder="Type anything naturally here...&#10;The system only sees your timing rhythm, not your words.&#10;Mouse movements are also captured automatically."></textarea>
     <div class="btn-row" style="margin-top:6px">
       <button class="btn btn-success" id="enroll-btn" onclick="doEnroll()" disabled>BUILD PROFILE</button>
-      <button class="btn btn-ghost"   onclick="resetEnroll()">↺ RESET</button>
+      <button class="btn btn-ghost" onclick="resetEnroll()">↺ RESET</button>
     </div>
-    <div class="enroll-msg" id="enroll-msg"></div>
-
+    <div class="emsg" id="enroll-msg"></div>
     <div class="stat-grid" id="enroll-stats" style="display:none">
-      <div class="stat-box"><div class="stat-label">AVG DWELL TIME</div><div class="stat-val" id="s-dwell">-</div></div>
-      <div class="stat-box"><div class="stat-label">AVG FLIGHT TIME</div><div class="stat-val" id="s-flight">-</div></div>
-      <div class="stat-box"><div class="stat-label">OVERLAP RATE</div><div class="stat-val" id="s-overlap">-</div></div>
-      <div class="stat-box"><div class="stat-label">TOTAL KEYSTROKES</div><div class="stat-val" id="s-total">-</div></div>
+      <div class="stat-box"><div class="sl">AVG DWELL</div><div class="sv" id="s-dwell">-</div></div>
+      <div class="stat-box"><div class="sl">AVG FLIGHT</div><div class="sv" id="s-flight">-</div></div>
+      <div class="stat-box"><div class="sl">OVERLAP RATE</div><div class="sv" id="s-overlap">-</div></div>
+      <div class="stat-box"><div class="sl">MOUSE MOVES</div><div class="sv" id="s-mouse">-</div></div>
     </div>
   </div>
 
-  <!-- Phase 2: Live monitor -->
   <div class="card">
     <div class="card-title"><span class="dot"></span>PHASE 2 - LIVE RISK SCORE</div>
     <div class="gauge-wrap">
       <div class="gauge-svg-wrap">
         <svg viewBox="0 0 180 180">
           <path d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--bg3)" stroke-width="16" stroke-linecap="round"/>
-          <path id="g-arc-live" d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round"
-                stroke-dasharray="226" stroke-dashoffset="226"
-                style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+          <path id="g-arc-live" d="M18 140 A72 72 0 0 1 162 140" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226" style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s"/>
         </svg>
       </div>
       <div class="gauge-pct" id="g-pct-live" style="color:var(--green)">-</div>
       <div class="gauge-sub" id="g-sub-live">Enroll first, then type below</div>
-      <div class="decision-chip" id="g-chip-live">WAITING</div>
+      <div class="dchip" id="g-chip-live">WAITING</div>
     </div>
     <div class="tbar-section">
       <div class="tbar">
-        <div class="tbar-fill"   id="t-fill-live" style="width:0%;background:var(--green)"></div>
+        <div class="tbar-fill" id="t-fill-live" style="width:0%;background:var(--green)"></div>
         <div class="tbar-marker" id="t-mark-live" style="left:65%"></div>
       </div>
     </div>
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);width:100%">
       <div class="srow"><span class="lbl">IF score</span><span class="val" id="lv-if">-</span></div>
       <div class="srow"><span class="lbl">SVM score</span><span class="val" id="lv-svm">-</span></div>
       <div class="srow"><span class="lbl">Personal deviation</span><span class="val" id="lv-dev">-</span></div>
       <div class="srow"><span class="lbl">Threshold</span><span class="val" id="lv-thresh">-</span></div>
       <div class="srow"><span class="lbl">Keys scored</span><span class="val" id="lv-ks">0</span></div>
+      <div class="srow"><span class="lbl">Enroll mode</span><span class="val" id="lv-mode">-</span></div>
     </div>
   </div>
 
-  <!-- Monitor area full width -->
   <div class="card full">
     <div class="card-title">
       <span class="dot"></span>LIVE MONITORING AREA
@@ -664,19 +308,14 @@ The system only sees your timing rhythm, not your words."></textarea>
         </select>
       </span>
     </div>
-    <textarea class="monitor-textarea" id="monitor-box" disabled
-      placeholder="Complete Phase 1 enrollment first.
-
-After enrolling, type here to be monitored live. Score updates every 20 keystrokes.
-
-TIP: Ask your supervisor to type here - their different rhythm will raise the risk score!"></textarea>
+    <textarea class="mtarea" id="monitor-box" disabled
+      placeholder="Complete Phase 1 enrollment first.&#10;&#10;After enrolling, type here to be monitored live. Score updates every 20 keystrokes.&#10;&#10;TIP: Ask your supervisor to type here - their different rhythm will raise the risk score!"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted2)">Score updates every 20 keystrokes</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted2)" id="ks-live-count">0 keystrokes</span>
     </div>
     <div class="log-area" id="log-live" style="margin-top:10px"><div class="log-entry">Waiting for enrollment...</div></div>
   </div>
-
 </div>
 
 <!-- STEP-UP AUTH MODAL -->
@@ -687,475 +326,577 @@ TIP: Ask your supervisor to type here - their different rhythm will raise the ri
     <p>Anomalous behaviour detected. Your session requires re-authentication to continue.</p>
     <div class="modal-info" id="modal-info">-</div>
     <div class="modal-btns">
-      <button class="btn btn-success" onclick="passAuth()">✓ VERIFIED</button>
+      <button class="btn btn-success" onclick="triggerLiveness()">📷 FACE VERIFY</button>
       <button class="btn btn-danger"  onclick="failAuth()">✕ LOCK SESSION</button>
     </div>
   </div>
 </div>
 
+<!-- LIVENESS WAITING OVERLAY -->
+<div id="liveness-waiting" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-size:52px">📷</div>
+  <div style="font-family:var(--mono);font-size:18px;color:var(--green)">LIVENESS CHECK IN PROGRESS</div>
+  <div style="font-family:var(--mono);font-size:13px;color:var(--muted2)">Webcam is open - please look at the camera and blink naturally</div>
+  <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">Up to 12 seconds...</div>
+  <div style="width:200px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden">
+    <div id="liveness-bar" style="height:4px;background:var(--green);border-radius:2px;width:0%;transition:width 12s linear"></div>
+  </div>
+</div>
+
 <script>
-// ════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// CONSTANTS & STATE
+// ═══════════════════════════════════════════════
 const ENROLL_TARGET = 80;
 const SCORE_EVERY   = 20;
 
-let anomalyUsers  = [];
-let activeAlerts  = new Set();   // track locally which alerts are on
-let enrolledUID   = null;
-let liveCtx       = 'normal_browsing';
+let anomalyUsers   = [];
+let activeAlerts   = new Set();
+let enrolledUID    = null;
+let liveCtx        = 'normal_browsing';
+let enrollMode     = 'keystroke_only';  // or 'combined'
 
-let enrollKS      = [];
-let enrollPressT  = {};
-let enrollLastUp  = null;
+// Keystroke capture
+let enrollKS       = [];
+let enrollPressT   = {};
+let enrollLastUp   = null;
+let monitorKS      = [];
+let monitorPressT  = {};
+let monitorLastUp  = null;
+let liveKsTotal    = 0;
 
-let monitorKS     = [];
-let monitorPressT = {};
-let monitorLastUp = null;
-let liveKsTotal   = 0;
+// Mouse capture for enrollment
+let mouseCapturing = false;
+let mouseMoves     = [];  // [{x,y,t}]
+let mouseClicks    = [];  // [{button,dwell,inter}]
+let mouseScrolls   = [];  // [{delta,t}]
+let mouseLastClick = null;
+let mouseClickPress= null;
+let mouseLastScroll= null;
 
-// ════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // TABS
-// ════════════════════════════════════════
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active',['replay','live'][i]===name);
-  });
+// ═══════════════════════════════════════════════
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['replay','live'][i]===n));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
 }
 
-// ════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // INIT
-// ════════════════════════════════════════
-async function init() {
-  try {
-    const d = await fetchJ('/api/users');
-    const sel = document.getElementById('user-select');
-    sel.innerHTML = d.users.map(u=>`<option value="${u}">USER ${String(u).padStart(3,'0')}</option>`).join('');
-    log('replay', `System ready - ${d.total} enrolled users loaded.`, 'low');
-  } catch(e){ log('replay','Failed to load users: '+e,'high'); }
-
-  try {
-    const d = await fetchJ('/api/anomaly-users');
-    anomalyUsers = d.anomaly_users.map(x=>x.user_id);
-    log('replay', `Isolation Forest flagged ${anomalyUsers.length} anomaly users.`, 'low');
-  } catch(e){ log('replay','Failed to load anomaly users.','high'); }
-
+// ═══════════════════════════════════════════════
+async function init(){
+  try{
+    const d=await fetchJ('/api/users');
+    document.getElementById('user-select').innerHTML=
+      d.users.map(u=>`<option value="${u}">USER ${String(u).padStart(3,'0')}</option>`).join('');
+    log('replay',`System ready - ${d.total} enrolled users.`,'low');
+  }catch(e){log('replay','Failed to load users: '+e,'high');}
+  try{
+    const d=await fetchJ('/api/anomaly-users');
+    anomalyUsers=d.anomaly_users.map(x=>x.user_id);
+    log('replay',`Isolation Forest flagged ${anomalyUsers.length} anomaly users.`,'low');
+  }catch(e){log('replay','Failed to load anomaly users.','high');}
   setupEnroll();
   setupMonitor();
-  setInterval(syncAlertPill, 4000);
+  setupMouseCapture();
+  setInterval(syncAlertPill,4000);
 }
 
-// ════════════════════════════════════════
-// REPLAY TAB
-// ════════════════════════════════════════
-async function replayNormal() {
-  const uid = parseInt(document.getElementById('user-select').value);
-  const ctx = document.getElementById('ctx-select').value;
-  try {
-    const d = await postJ('/api/replay', {user_id:uid, context:ctx, n_samples:150});
-    renderGauge(d, false);
-    log('replay', `USER ${uid} | ${ctx} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`, d.risk_level);
-    if(d.decision==='step_up_auth') showModal(d);
-  } catch(e){ log('replay','Replay error: '+e,'high'); }
-}
-
-async function replayAnomaly() {
-  if(!anomalyUsers.length){ alert('No anomaly users found'); return; }
-  const uid = anomalyUsers[Math.floor(Math.random()*anomalyUsers.length)];
-  const ctx = document.getElementById('ctx-select').value;
-  try {
-    const d = await postJ('/api/replay', {user_id:uid, context:ctx, n_samples:150});
-    renderGauge(d, false);
-    log('replay', `⚠ ANOMALY USER ${uid} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`, d.risk_level);
-    if(d.decision==='step_up_auth') showModal(d);
-  } catch(e){ log('replay','Replay error: '+e,'high'); }
-}
-
-// ════════════════════════════════════════
-// ALERTS - toggle on/off
-// ════════════════════════════════════════
-async function toggleAlert(source, btnId) {
-  const btn = document.getElementById(btnId);
-  if(activeAlerts.has(source)) {
-    // Turn off
-    await fetch('/api/alert/'+source, {method:'DELETE'});
-    activeAlerts.delete(source);
-    btn.classList.remove('active');
-    log('replay', `Alert cleared: ${source}`, 'low');
-  } else {
-    // Turn on
-    await postJ('/api/alert', {source, severity:'high'});
-    activeAlerts.add(source);
-    btn.classList.add('active');
-    log('replay', `🚨 ALERT ACTIVE: ${source} - threshold tightened + score boosted`, 'high');
-  }
-  syncAlertPill();
-}
-
-async function clearAllAlerts() {
-  for(const s of ['network_guardian','ransomware_killer','content_threat_detection']) {
-    await fetch('/api/alert/'+s, {method:'DELETE'});
-    activeAlerts.delete(s);
-    const ids = {network_guardian:'al-net', ransomware_killer:'al-ran', content_threat_detection:'al-con'};
-    document.getElementById(ids[s]).classList.remove('active');
-  }
-  syncAlertPill();
-  log('replay', 'All alerts cleared - thresholds restored.', 'low');
-}
-
-function syncAlertPill() {
-  const n = activeAlerts.size;
-  const pill = document.getElementById('alert-pill');
-  pill.textContent = n + ' ALERT' + (n!==1?'S':'');
-  pill.className   = 'pill' + (n>0?' alert':'');
-}
-
-// ════════════════════════════════════════
-// ENROLLMENT CAPTURE
-// ════════════════════════════════════════
-function setupEnroll() {
+// ═══════════════════════════════════════════════
+// MOUSE CAPTURE - for enrollment phase
+// Captures mouse moves, clicks, scrolls while user types in enroll-box
+// ═══════════════════════════════════════════════
+function setupMouseCapture(){
   const box = document.getElementById('enroll-box');
-  box.addEventListener('keydown', e => {
-    enrollPressT[e.code] = performance.now();
+
+  // Start capturing when user focuses the enrollment area
+  box.addEventListener('focus', ()=>{
+    mouseCapturing = true;
+    document.getElementById('mouse-ind').classList.add('active');
+    document.getElementById('mouse-ind').innerHTML =
+      '<span class="mouse-dot"></span>MOUSE CAPTURE ON';
   });
-  box.addEventListener('keyup', e => {
-    const up   = performance.now();
-    const down = enrollPressT[e.code];
-    if(!down) return;
-    const dwell  = up - down;
-    const flight = enrollLastUp ? Math.max(0, down - enrollLastUp) : 0;
-    enrollLastUp = up;
-    delete enrollPressT[e.code];
-    if(dwell > 10 && dwell < 2000) {
-      enrollKS.push({dwell, flight});
-      updateEnrollUI();
+  box.addEventListener('blur', ()=>{
+    mouseCapturing = false;
+    document.getElementById('mouse-ind').classList.remove('active');
+    document.getElementById('mouse-ind').innerHTML =
+      '<span class="mouse-dot"></span>MOUSE CAPTURE OFF';
+  });
+
+  // Capture mouse moves globally while enrolling
+  document.addEventListener('mousemove', e=>{
+    if(!mouseCapturing) return;
+    mouseMoves.push({x: e.clientX, y: e.clientY, t: performance.now()});
+    // Keep only last 500 moves to avoid memory issues
+    if(mouseMoves.length > 500) mouseMoves.shift();
+    updateMouseStats();
+  });
+
+  // Capture mouse clicks
+  document.addEventListener('mousedown', e=>{
+    if(!mouseCapturing) return;
+    mouseClickPress = {button: e.button, t: performance.now()};
+  });
+  document.addEventListener('mouseup', e=>{
+    if(!mouseCapturing || !mouseClickPress) return;
+    const dwell = performance.now() - mouseClickPress.t;
+    const inter = mouseLastClick ? (mouseClickPress.t - mouseLastClick) : 0;
+    mouseLastClick = performance.now();
+    if(dwell > 0 && dwell < 3000){
+      mouseClicks.push({button: mouseClickPress.button, dwell, inter: Math.max(0,inter)});
     }
+    mouseClickPress = null;
+  });
+
+  // Capture scroll
+  document.addEventListener('wheel', e=>{
+    if(!mouseCapturing) return;
+    const inter = mouseLastScroll ? (performance.now() - mouseLastScroll) : 0;
+    mouseLastScroll = performance.now();
+    mouseScrolls.push({delta: e.deltaY, inter: Math.max(0,inter)});
   });
 }
 
-function updateEnrollUI() {
-  const n   = enrollKS.length;
-  const pct = Math.min(100, n/ENROLL_TARGET*100);
-  document.getElementById('ks-count').textContent        = `${n} / ${ENROLL_TARGET}`;
-  document.getElementById('enroll-prog').style.width     = pct + '%';
-  document.getElementById('enroll-btn').disabled         = n < ENROLL_TARGET;
-  setEnrollMsg(n >= ENROLL_TARGET
-    ? `✓ ${n} keystrokes ready - click BUILD PROFILE`
-    : `Keep typing... ${ENROLL_TARGET-n} more needed`, n >= ENROLL_TARGET ? 'var(--green)' : 'var(--muted2)');
+function updateMouseStats(){
+  const el = document.getElementById('mouse-stats');
+  if(el) el.textContent = `${mouseMoves.length} moves · ${mouseClicks.length} clicks · ${mouseScrolls.length} scrolls`;
 }
 
-async function doEnroll() {
-  if(enrollKS.length < ENROLL_TARGET) return;
-  setEnrollMsg('Building behavioral profile...', 'var(--purple)');
-  document.getElementById('enroll-btn').disabled = true;
+// Compute 33 mouse features matching training order
+function computeMouseFeatures(){
+  const mean = a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const std  = a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length);};
 
-  const features = computeFeatures(enrollKS);
+  // -- BUTTON features (11) --
+  const clicks = mouseClicks;
+  const dwells  = clicks.map(c=>c.dwell/1000);
+  const inters  = clicks.filter(c=>c.inter>0).map(c=>c.inter/1000);
+  const dm=mean(dwells),ds=std(dwells),im=mean(inters),is_=std(inters);
+  const dclicks = inters.filter(i=>i<0.3).length;
+  const drate   = inters.length>0 ? dclicks/inters.length : 0;
+  const totalT  = clicks.length>1 ? (clicks[clicks.length-1].dwell+clicks[clicks.length-1].inter)/1000 : 1;
+  const leftClk = clicks.filter(c=>c.button===0).length;
+  const lratio  = clicks.length>0 ? leftClk/clicks.length : 0.5;
+
+  const btnFeats = [
+    dm, ds,
+    dwells.length?Math.min(...dwells):0,
+    dwells.length?Math.max(...dwells):0,
+    im, is_,
+    inters.length?Math.min(...inters):0,
+    inters.length?Math.max(...inters):0,
+    drate,
+    clicks.length>0 ? clicks.length/Math.max(totalT,1) : 0,
+    clicks.length,
+    lratio,
+  ];
+
+  // -- MOVE features (13) --
+  const moves = mouseMoves;
+  let speeds=[], accels=[], angleDiffs=[], dists=[];
+  for(let i=1;i<moves.length;i++){
+    const dt=(moves[i].t-moves[i-1].t)/1000;
+    if(dt<=0) continue;
+    const dx=moves[i].x-moves[i-1].x, dy=moves[i].y-moves[i-1].y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    dists.push(dist);
+    speeds.push(dist/dt);
+    if(speeds.length>=2) accels.push(Math.abs(speeds[speeds.length-1]-speeds[speeds.length-2]));
+    if(i>=2){
+      const dx2=moves[i-1].x-moves[i-2].x, dy2=moves[i-1].y-moves[i-2].y;
+      const a1=Math.atan2(dy,dx), a2=Math.atan2(dy2,dx2);
+      let ad=Math.abs(a1-a2);
+      if(ad>Math.PI) ad=2*Math.PI-ad;
+      angleDiffs.push(ad);
+    }
+  }
+  const totalDist = dists.reduce((s,x)=>s+x,0);
+  const xs=moves.map(m=>m.x), ys=moves.map(m=>m.y);
+  const straight = moves.length>1 ? Math.sqrt((xs[xs.length-1]-xs[0])**2+(ys[ys.length-1]-ys[0])**2) : 0;
+  const pauseRate = speeds.filter(s=>s<5).length/Math.max(speeds.length,1);
+  const rDists=[];
+  for(let i=1;i<moves.length;i++){
+    rDists.push(Math.sqrt((moves[i].x-moves[i-1].x)**2+(moves[i].y-moves[i-1].y)**2));
+  }
+
+  const moveFeats = [
+    mean(speeds), std(speeds),
+    speeds.length?Math.max(...speeds):0,
+    mean(accels), std(accels),
+    pauseRate,
+    mean(angleDiffs), std(angleDiffs),
+    totalDist>0 ? straight/totalDist : 0,
+    xs.length?Math.max(...xs)-Math.min(...xs):0,
+    ys.length?Math.max(...ys)-Math.min(...ys):0,
+    mean(rDists), std(rDists),
+  ];
+
+  // -- SCROLL features (8) --
+  const scrolls = mouseScrolls;
+  const deltas  = scrolls.map(s=>Math.abs(s.delta));
+  const scrollInters = scrolls.filter(s=>s.inter>0).map(s=>s.inter/1000);
+  const downRatio = scrolls.length>0 ? scrolls.filter(s=>s.delta>0).length/scrolls.length : 0.5;
+  const burstRate = scrollInters.filter(i=>i<0.2).length/Math.max(scrollInters.length,1);
+  const scrollTotalT = scrolls.length>1 ? scrolls.reduce((s,x)=>s+x.inter,0)/1000 : 1;
+
+  const scrollFeats = [
+    mean(deltas), std(deltas),
+    downRatio,
+    mean(scrollInters), std(scrollInters),
+    burstRate,
+    scrollTotalT>0 ? scrolls.length/scrollTotalT : 0,
+    scrolls.length,
+  ];
+
+  // Total = 12 + 13 + 8 = 33 features
+  return [...btnFeats, ...moveFeats, ...scrollFeats];
+}
+
+// ═══════════════════════════════════════════════
+// ENROLLMENT KEYSTROKE CAPTURE
+// ═══════════════════════════════════════════════
+function setupEnroll(){
+  const box=document.getElementById('enroll-box');
+  box.addEventListener('keydown',e=>{enrollPressT[e.code]=performance.now();});
+  box.addEventListener('keyup',e=>{
+    const up=performance.now(), down=enrollPressT[e.code];
+    if(!down) return;
+    const dwell=up-down, flight=enrollLastUp?Math.max(0,down-enrollLastUp):0;
+    enrollLastUp=up;
+    delete enrollPressT[e.code];
+    if(dwell>10&&dwell<2000){ enrollKS.push({dwell,flight}); updateEnrollUI(); }
+  });
+}
+
+function updateEnrollUI(){
+  const n=enrollKS.length, pct=Math.min(100,n/ENROLL_TARGET*100);
+  document.getElementById('ks-count').textContent=`${n} / ${ENROLL_TARGET}`;
+  document.getElementById('enroll-prog').style.width=pct+'%';
+  document.getElementById('enroll-btn').disabled=n<ENROLL_TARGET;
+  setEmsg(n>=ENROLL_TARGET?`✓ ${n} keystrokes ready - click BUILD PROFILE`:`Keep typing... ${ENROLL_TARGET-n} more needed`,
+          n>=ENROLL_TARGET?'var(--green)':'var(--muted2)');
+}
+
+async function doEnroll(){
+  if(enrollKS.length<ENROLL_TARGET) return;
+  setEmsg('Building behavioral profile...','var(--purple)');
+  document.getElementById('enroll-btn').disabled=true;
+
+  const ksFeatures    = computeFeatures(enrollKS);
+  const mouseFeatures = computeMouseFeatures();
+  const hasMouse      = mouseMoves.length >= 10;
 
   // Show stats
-  document.getElementById('enroll-stats').style.display = 'grid';
-  document.getElementById('s-dwell').textContent   = (features[0]*1000).toFixed(0)+'ms';
-  document.getElementById('s-flight').textContent  = (features[5]*1000).toFixed(0)+'ms';
-  document.getElementById('s-overlap').textContent = (features[10]*100).toFixed(1)+'%';
-  document.getElementById('s-total').textContent   = enrollKS.length;
+  document.getElementById('enroll-stats').style.display='grid';
+  document.getElementById('s-dwell').textContent   = (ksFeatures[0]*1000).toFixed(0)+'ms';
+  document.getElementById('s-flight').textContent  = (ksFeatures[5]*1000).toFixed(0)+'ms';
+  document.getElementById('s-overlap').textContent = (ksFeatures[10]*100).toFixed(1)+'%';
+  document.getElementById('s-mouse').textContent   = mouseMoves.length+' pts';
 
-  try {
-    const d = await postJ('/api/enroll', {user_id:9999, features});
-    if(d.status === 'enrolled') {
-      enrolledUID = 9999;
+  try{
+    let d, endpoint;
+    if(hasMouse){
+      // Use combined enrollment - more accurate
+      endpoint = '/api/enroll-combined';
+      d = await postJ(endpoint, {user_id:9999, ks_features:ksFeatures, mouse_features:mouseFeatures});
+      enrollMode = 'combined';
+    } else {
+      // Fallback to keystroke-only
+      endpoint = '/api/enroll';
+      d = await postJ(endpoint, {user_id:9999, features:ksFeatures});
+      enrollMode = 'keystroke_only';
+    }
+
+    if(d.status==='enrolled'){
+      enrolledUID=9999;
       document.getElementById('enroll-box').classList.add('done');
-      document.getElementById('phase-tag').textContent  = '✓ ENROLLED';
-      document.getElementById('phase-tag').className    = 'phase-tag phase-done';
-      document.getElementById('monitor-box').disabled   = false;
-      document.getElementById('enrolled-pill').style.display = 'inline';
-      setEnrollMsg(`✓ Profile built! IF=${d.if_score} | SVM=${d.svm_score}`, 'var(--green)');
-      log('live', '✓ Enrollment complete. Live monitoring active.', 'low');
+      document.getElementById('phase-tag').textContent='✓ ENROLLED';
+      document.getElementById('phase-tag').className='ptag ptag-d';
+      document.getElementById('monitor-box').disabled=false;
+      document.getElementById('enrolled-pill').style.display='inline';
+      document.getElementById('lv-mode').textContent = hasMouse ? 'KEYSTROKE + MOUSE' : 'KEYSTROKE ONLY';
+      setEmsg(`✓ Profile built (${hasMouse?'keystroke + mouse':'keystroke only'}) | IF=${d.if_score} | SVM=${d.svm_score}`,'var(--green)');
+      log('live',`✓ Enrolled via ${endpoint}. Mode: ${enrollMode}. Monitoring active.`,'low');
     }
-  } catch(e) {
-    setEnrollMsg('Enrollment failed: '+e.message, 'var(--red)');
-    document.getElementById('enroll-btn').disabled = false;
+  }catch(e){
+    setEmsg('Enrollment failed: '+e.message,'var(--red)');
+    document.getElementById('enroll-btn').disabled=false;
+    console.error(e);
   }
 }
 
-function resetEnroll() {
+function resetEnroll(){
   enrollKS=[]; enrollPressT={}; enrollLastUp=null; enrolledUID=null;
-  document.getElementById('enroll-box').value            = '';
-  document.getElementById('enroll-box').className        = 'enroll-textarea';
-  document.getElementById('enroll-prog').style.width     = '0%';
-  document.getElementById('ks-count').textContent        = '0 / 80';
-  document.getElementById('enroll-btn').disabled         = true;
-  document.getElementById('enroll-stats').style.display  = 'none';
-  document.getElementById('phase-tag').textContent       = 'NOT ENROLLED';
-  document.getElementById('phase-tag').className         = 'phase-tag phase-pending';
-  document.getElementById('monitor-box').disabled        = true;
-  document.getElementById('enrolled-pill').style.display = 'none';
-  setEnrollMsg('','');
+  mouseMoves=[]; mouseClicks=[]; mouseScrolls=[]; mouseLastClick=null; mouseLastScroll=null;
+  document.getElementById('enroll-box').value='';
+  document.getElementById('enroll-box').classList.remove('done');
+  document.getElementById('enroll-prog').style.width='0%';
+  document.getElementById('ks-count').textContent='0 / 80';
+  document.getElementById('enroll-btn').disabled=true;
+  document.getElementById('enroll-stats').style.display='none';
+  document.getElementById('phase-tag').textContent='NOT ENROLLED';
+  document.getElementById('phase-tag').className='ptag ptag-p';
+  document.getElementById('monitor-box').disabled=true;
+  document.getElementById('enrolled-pill').style.display='none';
+  document.getElementById('mouse-stats').textContent='';
+  setEmsg('','');
   monitorKS=[]; monitorPressT={}; monitorLastUp=null; liveKsTotal=0;
-  document.getElementById('lv-ks').textContent           = '0';
-  document.getElementById('ks-live-count').textContent   = '0 keystrokes';
+  document.getElementById('lv-ks').textContent='0';
+  document.getElementById('ks-live-count').textContent='0 keystrokes';
 }
 
-// ════════════════════════════════════════
-// LIVE MONITOR CAPTURE
-// ════════════════════════════════════════
-function setupMonitor() {
-  const box = document.getElementById('monitor-box');
-  box.addEventListener('keydown', e => {
-    monitorPressT[e.code] = performance.now();
-  });
-  box.addEventListener('keyup', async e => {
+// ═══════════════════════════════════════════════
+// MONITOR CAPTURE
+// ═══════════════════════════════════════════════
+function setupMonitor(){
+  const box=document.getElementById('monitor-box');
+  box.addEventListener('keydown',e=>{monitorPressT[e.code]=performance.now();});
+  box.addEventListener('keyup',async e=>{
     if(!enrolledUID) return;
-    const up   = performance.now();
-    const down = monitorPressT[e.code];
+    const up=performance.now(), down=monitorPressT[e.code];
     if(!down) return;
-    const dwell  = up - down;
-    const flight = monitorLastUp ? Math.max(0, down - monitorLastUp) : 0;
-    monitorLastUp = up;
+    const dwell=up-down, flight=monitorLastUp?Math.max(0,down-monitorLastUp):0;
+    monitorLastUp=up;
     delete monitorPressT[e.code];
-    if(dwell > 10 && dwell < 2000) {
-      monitorKS.push({dwell, flight});
+    if(dwell>10&&dwell<2000){
+      monitorKS.push({dwell,flight});
       liveKsTotal++;
-      document.getElementById('lv-ks').textContent          = liveKsTotal;
-      document.getElementById('ks-live-count').textContent  = liveKsTotal + ' keystrokes';
-
-      if(monitorKS.length >= SCORE_EVERY && monitorKS.length % SCORE_EVERY === 0) {
-        await scoreLive();
-      }
+      document.getElementById('lv-ks').textContent=liveKsTotal;
+      document.getElementById('ks-live-count').textContent=liveKsTotal+' keystrokes';
+      if(monitorKS.length%SCORE_EVERY===0) await scoreLive();
     }
   });
 }
 
-async function scoreLive() {
+async function scoreLive(){
   if(!enrolledUID) return;
-  // Use the LAST 20 keystrokes only - fresh window each time
-  // This prevents accumulated data from making the profile drift
-  const window = monitorKS.slice(-SCORE_EVERY);
-  const features = computeFeatures(window);
-  const ctx = document.getElementById('live-ctx').value;
-
-  try {
-    const d = await postJ('/api/score', {
-      user_id:  enrolledUID,
-      features: features,
-      context:  ctx
-    });
-    renderGaugeLive(d);
-    log('live',
-      `${liveKsTotal} keys | risk: ${d.risk_percent}% | ${d.decision.toUpperCase()} | thresh: ${Math.round(d.adaptive_threshold*100)}%`,
-      d.risk_level
-    );
-    if(d.decision === 'step_up_auth') showModal(d);
-  } catch(e) {
-    log('live', 'Score error: '+e.message, 'high');
-  }
+  const window20 = monitorKS.slice(-SCORE_EVERY);
+  const features = computeFeatures(window20);
+  const ctx      = document.getElementById('live-ctx').value;
+  try{
+    const d = await postJ('/api/score',{user_id:enrolledUID, features, context:ctx});
+    renderLive(d);
+    log('live',`${liveKsTotal} keys | risk: ${d.risk_percent}% | ${d.decision.toUpperCase()} | thresh: ${Math.round(d.adaptive_threshold*100)}%`,d.risk_level);
+    if(d.decision==='step_up_auth') showModal(d);
+  }catch(e){log('live','Score error: '+e.message,'high');console.error(e);}
 }
 
-// ════════════════════════════════════════
-// FEATURE COMPUTATION
-// Exactly 15 features matching training order
-// ════════════════════════════════════════
-function computeFeatures(keystrokes) {
-  // Convert ms → seconds to match Python training data
-  const dwells  = keystrokes.map(k => k.dwell / 1000);
-  // Flight: only include values > 30ms (removes key-repeat artefacts)
-  const flights = keystrokes
-    .filter(k => k.flight > 30)
-    .map(k => k.flight / 1000);
-
-  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
-  const std  = a => {
-    if(a.length < 2) return 0;
-    const m = mean(a);
-    return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length);
-  };
-  const med  = a => {
-    if(!a.length) return 0;
-    const s=[...a].sort((x,y)=>x-y);
-    return s[Math.floor(s.length/2)];
-  };
-
-  const dm=mean(dwells), ds=std(dwells);
-  const fm=mean(flights), fs=std(flights);
-  // overlap: flight < 20ms means next key before previous fully released
-  const overlapRate    = keystrokes.filter(k=>k.flight>0&&k.flight<20).length / keystrokes.length;
-  // session break: pause > 2000ms
-  const breakRate      = keystrokes.filter(k=>k.flight>2000).length / keystrokes.length;
-  const dwellCV        = dm>0 ? ds/dm : 0;
-  const flightCV       = fm>0 ? fs/fm : 0;
-
-  return [
-    dm,                                           // dwell_mean
-    ds,                                           // dwell_std
-    dwells.length ? Math.min(...dwells) : 0,      // dwell_min
-    dwells.length ? Math.max(...dwells) : 0,      // dwell_max
-    med(dwells),                                  // dwell_median
-    fm,                                           // flight_mean
-    fs,                                           // flight_std
-    flights.length ? Math.min(...flights) : 0,    // flight_min
-    flights.length ? Math.max(...flights) : 0,    // flight_max
-    med(flights),                                 // flight_median
-    overlapRate,                                  // overlap_rate
-    breakRate,                                    // session_break_rate
-    keystrokes.length,                            // total_keystrokes
-    dwellCV,                                      // dwell_cv
-    flightCV,                                     // flight_cv
+// ═══════════════════════════════════════════════
+// KEYSTROKE FEATURE COMPUTATION (15 features)
+// Must match Python aggregation order exactly
+// ═══════════════════════════════════════════════
+function computeFeatures(ks){
+  const dwells  = ks.map(k=>k.dwell/1000);
+  const flights = ks.filter(k=>k.flight>30).map(k=>k.flight/1000);
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const std=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length);};
+  const med=a=>{if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
+  const dm=mean(dwells),ds=std(dwells),fm=mean(flights),fs=std(flights);
+  const overlapRate    = ks.filter(k=>k.flight>0&&k.flight<20).length/ks.length;
+  const breakRate      = ks.filter(k=>k.flight>2000).length/ks.length;
+  return[
+    dm,ds,
+    dwells.length?Math.min(...dwells):0,
+    dwells.length?Math.max(...dwells):0,
+    med(dwells),
+    fm,fs,
+    flights.length?Math.min(...flights):0,
+    flights.length?Math.max(...flights):0,
+    med(flights),
+    overlapRate,breakRate,ks.length,
+    dm>0?ds/dm:0,
+    fm>0?fs/fm:0,
   ];
 }
 
-// ════════════════════════════════════════
-// GAUGE RENDERING
-// ════════════════════════════════════════
-const COLOR = { low:'var(--green)', medium:'var(--amber)', high:'var(--red)' };
-const DEC_TEXT  = { allow:'ALLOW ✓', warn:'WARNING ⚠', step_up_auth:'STEP-UP AUTH 🔒' };
-const DEC_CLASS = { allow:'allow',   warn:'warn',       step_up_auth:'lock' };
-
-function renderGauge(d, isLive) {
-  const sfx   = isLive ? '-live' : '';
-  const pct   = d.risk_percent;
-  const color = COLOR[d.risk_level] || 'var(--green)';
-  const arc   = document.getElementById('g-arc'+sfx);
-  const total = 226;
-  arc.style.strokeDashoffset = total - (pct/100)*total;
-  arc.style.stroke           = color;
-
-  document.getElementById('g-pct'+sfx).textContent  = pct + '%';
-  document.getElementById('g-pct'+sfx).style.color  = color;
-  document.getElementById('g-sub'+sfx).textContent  =
-    `User ${d.user_id} - ${(d.context||'').replace(/_/g,' ')}`;
-  const chip = document.getElementById('g-chip'+sfx);
-  chip.textContent = DEC_TEXT[d.decision] || d.decision;
-  chip.className   = 'decision-chip ' + (DEC_CLASS[d.decision]||'');
-
-  const tp = Math.round(d.adaptive_threshold*100);
-  document.getElementById('t-fill'+sfx).style.width      = pct + '%';
-  document.getElementById('t-fill'+sfx).style.background = color;
-  document.getElementById('t-mark'+sfx).style.left       = tp + '%';
-  if(!isLive) document.getElementById('thresh-label').textContent = `THRESHOLD ${tp}%`;
+// Re-send all active alerts to server before every replay
+// Fixes: server expires alerts after 10min but UI still shows them red
+async function ensureAlertsActive(){
+  for(const source of activeAlerts){
+    try{ await postJ('/api/alert',{source,severity:'high'}); }catch(e){}
+  }
 }
 
-function renderGauge(d, isLive) {
-  const sfx   = isLive ? '-live' : '';
-  const pct   = d.risk_percent;
-  const color = COLOR[d.risk_level] || 'var(--green)';
-  const arc   = document.getElementById('g-arc'+sfx);
-  arc.style.strokeDashoffset = 226 - (pct/100)*226;
-  arc.style.stroke           = color;
-  document.getElementById('g-pct'+sfx).textContent  = pct + '%';
-  document.getElementById('g-pct'+sfx).style.color  = color;
-  document.getElementById('g-sub'+sfx).textContent  =
-    `User ${d.user_id} - ${(d.context||'').replace(/_/g,' ')}`;
-  const chip = document.getElementById('g-chip'+sfx);
-  chip.textContent = DEC_TEXT[d.decision]||d.decision;
-  chip.className   = 'decision-chip '+(DEC_CLASS[d.decision]||'');
-  const tp = Math.round(d.adaptive_threshold*100);
-  document.getElementById('t-fill'+sfx).style.width      = pct+'%';
-  document.getElementById('t-fill'+sfx).style.background = color;
-  document.getElementById('t-mark'+sfx).style.left       = tp+'%';
-  if(!isLive) document.getElementById('thresh-label').textContent = `THRESHOLD ${tp}%`;
+// ═══════════════════════════════════════════════
+// DATASET REPLAY
+// ═══════════════════════════════════════════════
+async function replayNormal(){
+  const uid=parseInt(document.getElementById('user-select').value);
+  const ctx=document.getElementById('ctx-select').value;
+  await ensureAlertsActive();
+  try{
+    const d=await postJ('/api/replay',{user_id:uid,context:ctx,n_samples:150});
+    renderGauge(d,false); updateBreakdown(d);
+    log('replay',`USER ${uid} | ${ctx.replace(/_/g,' ')} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`,d.risk_level);
+    if(d.decision==='step_up_auth') showModal(d);
+  }catch(e){log('replay','Replay error: '+e,'high');}
 }
 
-function renderGaugeLive(d) {
-  renderGauge(d, true);
-  document.getElementById('lv-if').textContent    = d.if_score    ?? '-';
-  document.getElementById('lv-svm').textContent   = d.svm_score   ?? 'not used';
-  document.getElementById('lv-dev').textContent   = d.personal_deviation ?? '-';
+async function replayAnomaly(){
+  if(!anomalyUsers.length){alert('No anomaly users found');return;}
+  const uid=anomalyUsers[Math.floor(Math.random()*anomalyUsers.length)];
+  const ctx=document.getElementById('ctx-select').value;
+  await ensureAlertsActive();
+  try{
+    const d=await postJ('/api/replay',{user_id:uid,context:ctx,n_samples:150});
+    renderGauge(d,false); updateBreakdown(d);
+    log('replay',`⚠ ANOMALY USER ${uid} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`,d.risk_level);
+    if(d.decision==='step_up_auth') showModal(d);
+  }catch(e){log('replay','Replay error: '+e,'high');}
+}
+
+// ═══════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════
+async function toggleAlert(source,btnId){
+  const btn=document.getElementById(btnId);
+  if(activeAlerts.has(source)){
+    await fetch('/api/alert/'+source,{method:'DELETE'});
+    activeAlerts.delete(source);
+    btn.classList.remove('active');
+    log('replay',`Alert cleared: ${source}`,'low');
+  } else {
+    await postJ('/api/alert',{source,severity:'high'});
+    activeAlerts.add(source);
+    btn.classList.add('active');
+    log('replay',`🚨 ALERT: ${source} - threshold ↓ + score ↑`,'high');
+  }
+  syncAlertPill();
+}
+
+async function clearAllAlerts(){
+  for(const s of['network_guardian','ransomware_killer','content_threat_detection']){
+    await fetch('/api/alert/'+s,{method:'DELETE'});
+    activeAlerts.delete(s);
+    const ids={network_guardian:'al-ne',ransomware_killer:'al-ra',content_threat_detection:'al-co'};
+    document.getElementById(ids[s]).classList.remove('active');
+  }
+  syncAlertPill();
+  log('replay','All alerts cleared - thresholds restored.','low');
+}
+
+function syncAlertPill(){
+  const n=activeAlerts.size;
+  const b=document.getElementById('alert-pill');
+  b.textContent=n+' ALERT'+(n!==1?'S':'');
+  b.className='pill'+(n>0?' alert':'');
+}
+
+// ═══════════════════════════════════════════════
+// FACE LIVENESS
+// ═══════════════════════════════════════════════
+async function triggerLiveness(){
+  document.getElementById('modal').classList.remove('show');
+  // Show waiting overlay
+  const ov=document.getElementById('liveness-waiting');
+  ov.style.display='flex';
+  // Animate progress bar
+  setTimeout(()=>{document.getElementById('liveness-bar').style.width='100%';},50);
+  try{
+    const r=await fetch('/api/liveness-check',{method:'POST'});
+    const d=await r.json();
+    ov.style.display='none';
+    document.getElementById('liveness-bar').style.width='0%';
+    document.getElementById('liveness-bar').style.transition='none';
+    if(d.passed){
+      log('replay',`✓ Liveness PASSED in ${d.duration}s - ${d.blink_count} blink(s) - session continues`,'low');
+      log('live',`✓ Identity verified - monitoring continues`,'low');
+    } else {
+      log('replay',`✕ Liveness FAILED - ${d.reason} - session LOCKED`,'high');
+      log('live',`✕ Session LOCKED`,'high');
+      document.getElementById('monitor-box').disabled=true;
+    }
+  }catch(e){
+    document.getElementById('liveness-waiting').style.display='none';
+    log('replay','Liveness check error: '+e,'high');
+    console.error(e);
+  }
+}
+
+function failAuth(){
+  document.getElementById('modal').classList.remove('show');
+  log('replay','✕ Authentication manually failed - session LOCKED','high');
+  log('live','✕ Session LOCKED','high');
+  document.getElementById('monitor-box').disabled=true;
+}
+
+// ═══════════════════════════════════════════════
+// DISPLAY
+// ═══════════════════════════════════════════════
+const COL={low:'var(--green)',medium:'var(--amber)',high:'var(--red)'};
+const DT={allow:'ALLOW ✓',warn:'WARNING ⚠',step_up_auth:'STEP-UP AUTH 🔒'};
+const DC={allow:'allow',warn:'warn',step_up_auth:'lock'};
+
+function renderGauge(d,live){
+  const sfx=live?'-live':'';
+  const pct=d.risk_percent, color=COL[d.risk_level]||'var(--green)';
+  document.getElementById('g-arc'+sfx).style.strokeDashoffset=226-(pct/100)*226;
+  document.getElementById('g-arc'+sfx).style.stroke=color;
+  document.getElementById('g-pct'+sfx).textContent=pct+'%';
+  document.getElementById('g-pct'+sfx).style.color=color;
+  document.getElementById('g-sub'+sfx).textContent=`User ${d.user_id} - ${(d.context||'').replace(/_/g,' ')}`;
+  const chip=document.getElementById('g-chip'+sfx);
+  chip.textContent=DT[d.decision]||d.decision;
+  chip.className='dchip '+(DC[d.decision]||'');
+  const tp=Math.round(d.adaptive_threshold*100);
+  document.getElementById('t-fill'+sfx).style.width=pct+'%';
+  document.getElementById('t-fill'+sfx).style.background=color;
+  document.getElementById('t-mark'+sfx).style.left=tp+'%';
+  if(!live) document.getElementById('thresh-label').textContent=`THRESHOLD ${tp}%`;
+}
+
+function updateBreakdown(d){
+  document.getElementById('v-if').textContent    = d.if_score??'-';
+  document.getElementById('v-svm').textContent   = d.svm_score??'not used';
+  document.getElementById('v-dev').textContent   = d.personal_deviation??'-';
+  document.getElementById('v-boost').textContent = d.alert_boost??'0';
+  document.getElementById('v-thresh').textContent= d.adaptive_threshold;
+  document.getElementById('v-svmu').textContent  = d.svm_used?'YES ✓':'NO';
+  document.getElementById('v-mode').textContent  = (d.mode||'-').toUpperCase();
+}
+
+function renderLive(d){
+  renderGauge(d,true);
+  document.getElementById('lv-if').textContent    = d.if_score??'-';
+  document.getElementById('lv-svm').textContent   = d.svm_score??'not used';
+  document.getElementById('lv-dev').textContent   = d.personal_deviation??'-';
   document.getElementById('lv-thresh').textContent= d.adaptive_threshold;
 }
 
-function updateBreakdown(d) {
-  document.getElementById('v-if').textContent       = d.if_score ?? '-';
-  document.getElementById('v-svm').textContent      = d.svm_score ?? 'not used';
-  document.getElementById('v-dev').textContent      = d.personal_deviation ?? '-';
-  document.getElementById('v-boost').textContent    = d.alert_boost ?? '0';
-  document.getElementById('v-thresh').textContent   = d.adaptive_threshold;
-  document.getElementById('v-svm-used').textContent = d.svm_used ? 'YES ✓' : 'NO';
-}
-
-// Override replayNormal/replayAnomaly to also update breakdown
-const _replayNormal  = replayNormal;
-const _replayAnomaly = replayAnomaly;
-
-async function replayNormal() {
-  const uid = parseInt(document.getElementById('user-select').value);
-  const ctx = document.getElementById('ctx-select').value;
-  try {
-    const d = await postJ('/api/replay', {user_id:uid, context:ctx, n_samples:150});
-    renderGauge(d, false);
-    updateBreakdown(d);
-    log('replay', `USER ${uid} | ${ctx.replace(/_/g,' ')} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`, d.risk_level);
-    if(d.decision==='step_up_auth') showModal(d);
-  } catch(e){ log('replay','Replay error: '+e,'high'); }
-}
-
-async function replayAnomaly() {
-  if(!anomalyUsers.length){ alert('No anomaly users found'); return; }
-  const uid = anomalyUsers[Math.floor(Math.random()*anomalyUsers.length)];
-  const ctx = document.getElementById('ctx-select').value;
-  try {
-    const d = await postJ('/api/replay', {user_id:uid, context:ctx, n_samples:150});
-    renderGauge(d, false);
-    updateBreakdown(d);
-    log('replay', `⚠ ANOMALY USER ${uid} | RISK ${d.risk_percent}% | ${d.decision.toUpperCase()}`, d.risk_level);
-    if(d.decision==='step_up_auth') showModal(d);
-  } catch(e){ log('replay','Replay error: '+e,'high'); }
-}
-
-// ════════════════════════════════════════
-// MODAL
-// ════════════════════════════════════════
-function showModal(d) {
-  document.getElementById('modal-info').innerHTML =
+function showModal(d){
+  document.getElementById('modal-info').innerHTML=
     `Risk score: <strong>${d.risk_percent}%</strong> &nbsp;|&nbsp; Threshold: <strong>${Math.round(d.adaptive_threshold*100)}%</strong>`;
   document.getElementById('modal').classList.add('show');
 }
-function passAuth() {
-  document.getElementById('modal').classList.remove('show');
-  log('replay','✓ Step-up auth PASSED - session continues','low');
-  log('live',  '✓ Identity verified - monitoring continues','low');
-}
-function failAuth() {
-  document.getElementById('modal').classList.remove('show');
-  log('replay','✕ Step-up auth FAILED - session LOCKED','high');
-  log('live',  '✕ Session LOCKED','high');
-  document.getElementById('monitor-box').disabled = true;
-}
 
-function resetAll() {
+function resetAll(){
   clearAllAlerts();
-  renderGauge({risk_percent:0,risk_level:'low',decision:'-',user_id:'-',context:'-',adaptive_threshold:0.65}, false);
+  renderGauge({risk_percent:0,risk_level:'low',decision:'-',user_id:'-',context:'-',adaptive_threshold:0.65},false);
   log('replay','Demo reset.','low');
 }
 
-// ════════════════════════════════════════
-// LOGGING
-// ════════════════════════════════════════
-function log(tab, msg, lv='') {
-  const id  = tab==='live' ? 'log-live' : 'log-replay';
-  const el  = document.createElement('div');
-  el.className   = 'log-entry ' + lv;
-  const ts  = new Date().toLocaleTimeString('en',{hour12:false});
-  el.innerHTML   = `<span class="log-ts">[${ts}]</span>${msg}`;
+// ═══════════════════════════════════════════════
+// LOGGING + UTILS
+// ═══════════════════════════════════════════════
+function log(tab,msg,lv=''){
+  const id=tab==='live'?'log-live':'log-replay';
+  const el=document.createElement('div');
+  el.className='log-entry '+lv;
+  const ts=new Date().toLocaleTimeString('en',{hour12:false});
+  el.innerHTML=`<span class="log-ts">[${ts}]</span>${msg}`;
   document.getElementById(id).prepend(el);
 }
-
-// ════════════════════════════════════════
-// UTILS
-// ════════════════════════════════════════
-async function fetchJ(url)       { const r=await fetch(url);         return r.json(); }
-async function postJ(url, body)  {
-  const r = await fetch(url, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  });
-  if(!r.ok) { const t=await r.text(); throw new Error(t); }
-  return r.json();
+function setEmsg(msg,color){
+  const el=document.getElementById('enroll-msg');
+  el.textContent=msg; el.style.color=color;
 }
-function setEnrollMsg(msg, color) {
-  const el = document.getElementById('enroll-msg');
-  el.textContent = msg;
-  el.style.color = color;
+async function fetchJ(url){const r=await fetch(url);return r.json();}
+async function postJ(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(t);}
+  return r.json();
 }
 
 init();
