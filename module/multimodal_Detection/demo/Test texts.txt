@@ -1,0 +1,53 @@
+Normal (Benign) Text Samples
+
+These should ideally be LOW RISK
+
+1
+
+Hi team, please find the meeting agenda attached. Let me know if you want to add anything before tomorrow’s discussion.
+
+2
+
+Hey, can we reschedule our catch-up to next week? I’m tied up with project work today.
+
+3
+
+Good morning, the server maintenance is completed. Everything is running normally now.
+
+4
+
+Please review the latest project report when you have time and share your feedback.
+
+5 (important edge case)
+
+Can you please arrange a meeting with our boss today to discuss project updates?
+
+👉 This one SHOULD be normal — but your model may wrongly flag it (like you observed)
+
+🚨 🔴 Phishing / Malicious Samples
+
+These should be HIGH RISK
+
+1 (classic phishing)
+
+Your account has been suspended. Please verify your identity immediately by clicking the link below or your account will be permanently locked.
+
+2
+
+URGENT: We detected unusual login activity. Enter your password here to secure your account now.
+
+3
+
+Congratulations! You have won $10,000. Click here to claim your reward within 24 hours.
+
+4
+
+Dear user, your bank account has been compromised. Login immediately to prevent unauthorized transactions.
+
+5 (fake IT support)
+
+This is IT support. We need your login credentials to fix a security issue on your account.
+
+6 (advanced phishing — harder case)
+
+Please review the attached invoice and confirm payment details. Failure to respond will result in service interruption.
