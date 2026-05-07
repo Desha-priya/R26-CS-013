@@ -17,8 +17,11 @@ from sklearn.metrics import recall_score, f1_score, roc_curve, auc
 from sklearn.preprocessing import RobustScaler
 from pathlib import Path
 
-MODELS_DIR  = Path(__file__).parent.parent.parent / "models" / "zero_trust_auth"
-DATA_FILE   = Path(__file__).resolve().parent / "data_processing" / "user_behavioral_profiles_combined.csv"
+# Define root path for the zero trust module
+ROOT_PATH = Path(__file__).parent.parent.parent
+
+MODELS_DIR  = ROOT_PATH / "models" / "zero_trust_auth"
+DATA_FILE   = ROOT_PATH / "module" / "zero_Trust_Auth" / "data_processing" / "user_behavioral_profiles_combined.csv"
 
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
