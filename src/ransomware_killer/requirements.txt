@@ -6,3 +6,5 @@ watchdog
 matplotlib
 seaborn
 joblib
+flask
+flask-cors
