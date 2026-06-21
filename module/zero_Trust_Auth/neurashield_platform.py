@@ -24,7 +24,7 @@ from datetime import datetime
 from collections import deque
 
 sys.path.append(os.path.dirname(__file__))
-from risk_engine import RiskEngine
+from risk_engine_v2 import RiskEngine
 from session_monitor import SessionMonitor
 
 # ── App setup ─────────────────────────────────────────────
@@ -229,7 +229,10 @@ async def platform_status():
         'session_monitor':       monitor.get_status(),
         'n_enrolled_users':      len(engine.user_profiles),
         'n_per_user_models':     len(per_user_models),
-        'recent_events':         list(recent_events)[:10],
+        'recent_events': [   {k: ('' if isinstance(v, float) and v != v else v)
+        for k, v in ev.items()}
+        for ev in list(recent_events)[:10]
+        ],
         'timestamp':             datetime.now().isoformat(),
     }
 
@@ -244,9 +247,27 @@ async def get_audit_log(limit: int = 50):
     if not os.path.exists(AUDIT_LOG_FILE):
         return {'entries': [], 'total': 0}
     try:
-        df      = pd.read_csv(AUDIT_LOG_FILE)
+        df = pd.read_csv(AUDIT_LOG_FILE)
+
+        # Replace all NaN values with empty string
+        # NaN comes from empty CSV cells and is not JSON serialisable
+        df = df.fillna('')
+
+        # Convert any remaining float NaN that slipped through
         entries = df.tail(limit).to_dict(orient='records')
-        return {'entries': list(reversed(entries)), 'total': len(df)}
+
+        # Clean each entry — replace any float nan with empty string
+        clean = []
+        for row in entries:
+            clean_row = {}
+            for k, v in row.items():
+                if isinstance(v, float) and (v != v):  # nan check
+                    clean_row[k] = ''
+                else:
+                    clean_row[k] = v
+            clean.append(clean_row)
+
+        return {'entries': list(reversed(clean)), 'total': len(df)}
     except Exception as e:
         return {'entries': [], 'error': str(e)}
 
@@ -254,6 +275,50 @@ async def get_audit_log(limit: int = 50):
 async def session_activity():
     """Current session context from Windows monitor."""
     return monitor.get_status()
+
+
+# This stores the agent's latest score so the dashboard can show it
+
+# ── Agent score storage ────────────────────────────────────
+# The background agent sends its latest score here
+# Central dashboard polls /api/platform/status which includes this
+_latest_agent_score = {}
+
+@app.post("/api/agent-score")
+async def receive_agent_score(result: dict):
+    """
+    Receives score from the background keystroke agent.
+    Stores it so the central dashboard can display it live.
+    """
+    global _latest_agent_score
+    _latest_agent_score = result
+    _latest_agent_score['received_at'] = datetime.now().isoformat()
+
+    # Add to event feed if suspicious
+    dec  = result.get('decision', 'allow')
+    risk = result.get('risk_percent', 0)
+    if dec != 'allow':
+        add_event(3, f"agent_{dec}",
+                  f"Agent user {result.get('user_id')}: "
+                  f"{risk}% risk — {dec}",
+                  'high' if dec == 'step_up_auth' else 'medium')
+        layer_states[3]['threat_count'] += 1
+
+    # Audit
+    write_audit('agent_score',
+                user_id=result.get('user_id'),
+                layer=3,
+                risk_percent=risk,
+                decision=dec,
+                context=result.get('context'),
+                active_alerts=result.get('active_alerts', []))
+
+    return {"status": "received"}
+
+@app.get("/api/agent-score")
+async def get_agent_score():
+    """Return the latest score from the background agent."""
+    return _latest_agent_score or {"status": "no_score_yet"}
 
 
 # ══════════════════════════════════════════════════════════
