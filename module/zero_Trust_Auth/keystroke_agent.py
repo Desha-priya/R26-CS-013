@@ -29,18 +29,6 @@
 #   3. Profile saved to disk on first build and each update
 #   4. Step-up auth triggers face_liveness.py directly on this machine
 
-# keystroke_agent.py
-# NeuraShield — Background Keystroke Capture Agent
-# Runs silently in background, captures keystrokes from ANY application
-# Builds and continuously updates the user's behavioral profile
-# Sends scores to the risk engine periodically
-#
-# This is the REAL production approach:
-#   - No browser enrollment box needed
-#   - User just works normally
-#   - System learns them automatically
-#   - Profile updates every 5 minutes
-#   - Scoring happens every 30 seconds
 
 import time
 import threading
@@ -248,14 +236,13 @@ class KeystrokeAgent:
     # PROFILE BUILD AND UPDATE
     # ─────────────────────────────────────────────────────
     def _build_profile(self):
-        """
-        Build or update behavioral profile from current buffer.
-        First call: initial enrollment.
-        Subsequent calls: adaptive update — profile evolves with user.
-        """
-        ks = list(self.buffer)
-        if len(ks) < MIN_KS_TO_BUILD:
-            logger.info(f"[Agent] Need {MIN_KS_TO_BUILD} keystrokes, have {len(ks)}")
+          #  """
+          #  Build or update behavioral profile from current buffer.
+           # First call: initial enrollment.
+          #  Subsequent calls: adaptive update - profile evolves with user.
+          #  """
+        ks = list(self.buffer) 
+        if len(ks) < MIN_KS_TO_BUILD:   # 80 as you chose
             return
 
         features = self._extract_features(ks[-WINDOW_SIZE:])
@@ -263,33 +250,21 @@ class KeystrokeAgent:
             return
 
         try:
+            # Use enroll-combined if mouse data available, else simple enroll
             resp = requests.post(
                 f"{API_BASE}/api/enroll",
                 json={"user_id": self.user_id, "features": features},
                 timeout=5
             )
             if resp.status_code == 200:
-                self.profile_built     = True
+                self.profile_built = True
                 self.baseline_features = features
-                self.n_updates        += 1
-
-                # Save to disk
+                self.n_updates += 1
                 self._save_profile(features)
-
-                logger.info(
-                    f"[Agent] Profile {'updated' if self.n_updates > 1 else 'BUILT'} "
-                    f"#{self.n_updates} | "
-                    f"dwell={features[0]*1000:.0f}ms | "
-                    f"flight={features[5]*1000:.0f}ms | "
-                    f"from {len(ks)} keystrokes"
-                )
-            else:
-                logger.warning(f"[Agent] Enroll failed: {resp.status_code} {resp.text[:100]}")
-
-        except requests.exceptions.ConnectionError:
-            logger.warning("[Agent] Server not reachable for enrollment")
+                logger.info(f"[Agent] Profile {'updated' if self.n_updates > 1 else 'CREATED'} #{self.n_updates}")
         except Exception as e:
-            logger.error(f"[Agent] Profile build error: {e}")
+            logger.warning(f"[Agent] Profile build failed: {e}")
+    
 
     # ─────────────────────────────────────────────────────
     # SCORING
