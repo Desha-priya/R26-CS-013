@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuraShield — Central Command</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b12;--bg2:#0d1120;--bg3:#111827;--bd:#1e2a3a;--bd2:#243044;
+  --text:#e2e8f0;--mut:#6b7280;--mut2:#94a3b8;
+  --pur:#8b5cf6;--pur2:#6d28d9;
+  --teal:#14b8a6;--grn:#10b981;--red:#ef4444;--amb:#f59e0b;--blu:#3b82f6;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{background:var(--bg2);border-bottom:1px solid var(--bd);height:52px;display:flex;align-items:center;padding:0 24px;gap:14px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-icon{width:26px;height:26px;background:var(--pur);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 0 14px rgba(139,92,246,.5)}
+.logo h1{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.logo sub{font-size:9px;color:var(--mut);font-family:var(--mono);display:block;letter-spacing:.05em}
+.hr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:99px;border:1px solid var(--bd2);color:var(--mut);background:var(--bg3);white-space:nowrap;transition:all .3s}
+.pill.grn{border-color:var(--grn);color:var(--grn);background:rgba(16,185,129,.08)}
+.pill.red{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+.pill.amb{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.08)}
+.pill.pur{border-color:var(--pur);color:var(--pur);background:rgba(139,92,246,.08)}
+
+/* THREAT BANNER */
+#banner{display:none;padding:7px 24px;font-family:var(--mono);font-size:10px;color:var(--red);text-align:center;background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.3);animation:blink-a 1.4s infinite}
+@keyframes blink-a{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* GRID */
+main{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:16px 24px;max-width:1600px}
+.full{grid-column:1/-1}
+.half{grid-column:span 2}
+.span3{grid-column:span 3}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.25),transparent)}
+.ct{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.ct .dot{width:4px;height:4px;border-radius:50%;background:var(--pur);box-shadow:0 0 5px var(--pur);flex-shrink:0}
+
+/* LAYER CARDS */
+.lc{border-radius:10px;padding:14px;border:1px solid var(--bd);position:relative;overflow:hidden;transition:all .2s;cursor:pointer}
+.lc:hover{transform:translateY(-1px);border-color:var(--pur)}
+.lc.alerting{border-color:var(--red)!important;animation:pulse-b 1.6s infinite}
+@keyframes pulse-b{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}50%{box-shadow:0 0 0 5px rgba(239,68,68,.06)}}
+.lnum{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;margin-bottom:5px}
+.lname{font-size:13px;font-weight:700;margin-bottom:3px}
+.ldesc{font-family:var(--mono);font-size:9px;color:var(--mut);line-height:1.5;margin-bottom:9px}
+.lstat{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sdot.monitoring{background:var(--grn);box-shadow:0 0 5px var(--grn)}
+.sdot.alert{background:var(--red);box-shadow:0 0 6px var(--red);animation:pulse-dot 1s infinite}
+.sdot.active{background:var(--pur);box-shadow:0 0 6px var(--pur)}
+.sdot.elevated{background:var(--amb);box-shadow:0 0 6px var(--amb);animation:pulse-dot 1.2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.25}}
+.ltc{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:5px}
+.lbadge{position:absolute;top:9px;right:9px;font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:4px;font-weight:700}
+.badge-live{background:rgba(16,185,129,.15);color:var(--grn);border:1px solid rgba(16,185,129,.3)}
+.badge-sim{background:rgba(107,114,128,.1);color:var(--mut);border:1px solid var(--bd)}
+.sim-btn{font-family:var(--mono);font-size:9px;padding:6px 10px;border-radius:5px;border:1px solid;cursor:pointer;transition:all .15s;font-weight:700;letter-spacing:.02em;width:100%;margin-top:7px;text-align:center;display:block}
+.sb1{border-color:var(--teal);color:var(--teal);background:rgba(20,184,166,.08)}
+.sb2{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08)}
+.sb4{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.08)}
+.sb3{border-color:var(--pur);color:var(--pur);background:rgba(139,92,246,.08)}
+.sb-clr{border-color:var(--bd2);color:var(--mut);background:transparent}
+.sim-btn:hover{opacity:.75}
+
+/* GAUGE */
+.gw{display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0}
+.garc-wrap{position:relative;width:160px;height:88px;overflow:hidden}
+.garc-wrap svg{position:absolute;top:0;left:0;width:160px;height:160px}
+.gpct{font-family:var(--mono);font-size:34px;font-weight:700;letter-spacing:-.04em;transition:color .5s;margin-top:4px}
+.gsub{font-family:var(--mono);font-size:9px;color:var(--mut);text-align:center;max-width:160px;line-height:1.4}
+.dchip{font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;border-radius:99px;margin-top:5px;border:1px solid var(--bd2);color:var(--mut);background:var(--bg3);letter-spacing:.04em;transition:all .3s}
+.dchip.allow{border-color:var(--grn);color:var(--grn);background:rgba(16,185,129,.1)}
+.dchip.warn{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.1)}
+.dchip.lock{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+
+/* THRESHOLD BAR */
+.tbar-section{width:100%;margin-top:10px}
+.tbar-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:4px}
+.tbar{height:7px;background:var(--bg3);border-radius:4px;position:relative;overflow:visible}
+.tbar-fill{height:7px;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1),background .5s}
+.tbar-mark{position:absolute;top:-5px;width:2px;height:17px;border-radius:2px;background:white;transition:left .6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(255,255,255,.7)}
+.tbar-legend{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:3px}
+
+/* SROW */
+.srow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd);font-size:11px}
+.srow:last-child{border:none}
+.srow .lbl{color:var(--mut);font-family:var(--mono)}
+.srow .val{font-family:var(--mono);font-weight:600}
+
+/* SESSION MONITOR */
+.ctx-badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700}
+.ctx-n{background:rgba(16,185,129,.1);color:var(--grn);border:1px solid rgba(16,185,129,.3)}
+.ctx-s{background:rgba(245,158,11,.1);color:var(--amb);border:1px solid rgba(245,158,11,.3)}
+.ctx-f{background:rgba(59,130,246,.1);color:var(--blu);border:1px solid rgba(59,130,246,.3)}
+.ctx-a{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.comp-box{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;margin-top:8px}
+.comp-std{font-family:var(--mono);font-size:10px;color:var(--pur);font-weight:700}
+.comp-req{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px;line-height:1.4}
+
+/* ALERT FEED */
+.af-item{padding:7px 9px;border-radius:6px;border:1px solid var(--bd);background:var(--bg3);margin-bottom:5px;font-family:var(--mono);font-size:10px}
+.af-item.high{border-color:var(--red);background:rgba(239,68,68,.06)}
+.af-item.medium{border-color:var(--amb);background:rgba(245,158,11,.05)}
+.af-item.low,.af-item.info{border-color:var(--bd)}
+.af-src{font-weight:700;margin-bottom:1px}
+.af-time{color:var(--mut);font-size:9px}
+.af-msg{color:var(--mut2);font-size:9px;margin-top:1px}
+
+/* AUDIT TABLE */
+.atbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.atbl th{text-align:left;padding:5px 7px;color:var(--mut);border-bottom:1px solid var(--bd);font-weight:700;letter-spacing:.05em;font-size:9px}
+.atbl td{padding:5px 7px;border-bottom:1px solid rgba(30,42,58,.4);color:var(--text)}
+.atbl tr:hover td{background:rgba(255,255,255,.015)}
+.ascroll{max-height:170px;overflow-y:auto}
+.ascroll::-webkit-scrollbar{width:3px}
+.ascroll::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-size:11px;font-weight:700;padding:8px 14px;border-radius:6px;border:1px solid;cursor:pointer;transition:all .15s;letter-spacing:.03em}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-pur{background:var(--pur);border-color:var(--pur);color:white}
+.btn-pur:hover:not(:disabled){background:var(--pur2);box-shadow:0 0 14px rgba(139,92,246,.4)}
+.btn-red{background:var(--red);border-color:var(--red);color:white}
+.btn-ghost{background:transparent;border-color:var(--bd2);color:var(--mut)}
+.btn-ghost:hover{border-color:var(--mut2);color:var(--text)}
+
+/* THREAT LEVEL */
+.tl-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0}
+.tl-label{font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.1em}
+.tl-val{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:-.03em;transition:color .5s}
+.tl-sub{font-family:var(--mono);font-size:9px;color:var(--mut);text-align:center}
+
+/* AGENT STATUS */
+.agent-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bd);font-size:11px}
+.agent-row:last-child{border:none}
+.agent-lbl{color:var(--mut);font-family:var(--mono);font-size:10px}
+.agent-val{font-family:var(--mono);font-weight:600;font-size:10px}
+
+/* MODAL — PIN reset */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--pur);border-radius:14px;padding:28px;max-width:360px;width:90%;text-align:center;box-shadow:0 0 50px rgba(139,92,246,.2)}
+.modal h2{font-size:16px;font-weight:700;color:var(--pur);margin-bottom:6px}
+.modal p{font-size:12px;color:var(--mut2);margin-bottom:16px;font-family:var(--mono);line-height:1.5}
+.pin-input{font-family:var(--mono);font-size:22px;letter-spacing:.3em;text-align:center;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;color:var(--text);padding:10px;width:100%;margin-bottom:12px}
+.pin-input:focus{outline:none;border-color:var(--pur)}
+.modal-btns{display:flex;gap:8px;justify-content:center}
+.modal-err{font-family:var(--mono);font-size:11px;color:var(--red);min-height:16px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🛡</div>
+    <div><h1>NeuraShield</h1><sub>AUTONOMOUS CYBER DEFENSE PLATFORM</sub></div>
+  </div>
+  <div class="hr">
+    <span class="pill grn" id="sys-pill">● ONLINE</span>
+    <span class="pill" id="alert-pill">0 ALERTS</span>
+    <span class="pill pur" id="agent-pill">AGENT —</span>
+    <span class="pill" id="clock-pill" style="font-family:var(--mono);font-size:10px"></span>
+  </div>
+</header>
+
+<div id="banner">⚠ ELEVATED PLATFORM THREAT — All authentication thresholds tightened — Continuous re-verification enforced</div>
+
+<main>
+
+<!-- ── 4 LAYER CARDS ── -->
+<div class="lc" id="lc1"
+     style="background:linear-gradient(135deg,#0a1a1f,var(--bg2))"
+     onclick="window.open('/api/layer1/status','_blank')">
+  <span class="lbadge badge-sim">SIMULATED</span>
+  <div class="lnum" style="color:var(--teal)">01 / NETWORK GUARDIAN</div>
+  <div class="lname">Network Guardian</div>
+  <div class="ldesc">Zero-day intrusion detection<br>Real-time network traffic analysis</div>
+  <div class="lstat"><span class="sdot monitoring" id="sd1"></span><span id="st1" style="color:var(--mut)">Monitoring</span></div>
+  <div class="ltc" id="tc1">0 threats detected</div>
+  <button class="sim-btn sb1" onclick="event.stopPropagation();simLayer(1,'port_scan','Suspicious port scan detected','high')">⚡ Simulate Intrusion</button>
+</div>
+
+<div class="lc" id="lc2"
+     style="background:linear-gradient(135deg,#1a0a0a,var(--bg2))"
+     onclick="window.open('/api/layer2/status','_blank')">
+  <span class="lbadge badge-sim">SIMULATED</span>
+  <div class="lnum" style="color:var(--red)">02 / RANSOMWARE KILLER</div>
+  <div class="lname">Ransomware Killer</div>
+  <div class="ldesc">Endpoint behavioral protection<br>File system anomaly detection</div>
+  <div class="lstat"><span class="sdot monitoring" id="sd2"></span><span id="st2" style="color:var(--mut)">Monitoring</span></div>
+  <div class="ltc" id="tc2">0 threats detected</div>
+  <button class="sim-btn sb2" onclick="event.stopPropagation();simLayer(2,'file_encryption','Mass file encryption detected','high')">☣ Simulate Ransomware</button>
+</div>
+
+<div class="lc" id="lc3"
+     style="background:linear-gradient(135deg,#110a1a,var(--bg2));border-color:var(--pur)"
+     onclick="window.location='/layer3'">
+  <span class="lbadge badge-live">LIVE ✓</span>
+  <div class="lnum" style="color:var(--pur)">03 / ZERO-TRUST AUTH</div>
+  <div class="lname">Zero-Trust Auth</div>
+  <div class="ldesc">Continuous behavioral biometrics<br>116 users · 48 features · IF + SVM</div>
+  <div class="lstat"><span class="sdot active" id="sd3"></span><span id="st3" style="color:var(--pur)">Active</span></div>
+  <div class="ltc" id="tc3">0 step-up events</div>
+  <button class="sim-btn sb3" onclick="event.stopPropagation();window.location='/layer3'">→ Open Layer 3 Dashboard</button>
+</div>
+
+<div class="lc" id="lc4"
+     style="background:linear-gradient(135deg,#1a1200,var(--bg2))"
+     onclick="window.open('/api/layer4/status','_blank')">
+  <span class="lbadge badge-sim">SIMULATED</span>
+  <div class="lnum" style="color:var(--amb)">04 / CONTENT THREAT</div>
+  <div class="lname">Content Threat Det.</div>
+  <div class="ldesc">Deepfake & AI phishing detection<br>Multimodal content analysis</div>
+  <div class="lstat"><span class="sdot monitoring" id="sd4"></span><span id="st4" style="color:var(--mut)">Monitoring</span></div>
+  <div class="ltc" id="tc4">0 threats detected</div>
+  <button class="sim-btn sb4" onclick="event.stopPropagation();simLayer(4,'deepfake_detected','Deepfake detected in video call','medium')">👁 Simulate Deepfake</button>
+</div>
+
+<!-- ── PLATFORM THREAT LEVEL ── -->
+<div class="card">
+  <div class="ct"><span class="dot"></span>PLATFORM THREAT LEVEL</div>
+  <div class="tl-wrap">
+    <div class="tl-label">COMBINED STATUS</div>
+    <div class="tl-val" id="tl-val" style="color:var(--grn)">LOW</div>
+    <div class="tl-sub" id="tl-sub">All systems nominal</div>
+    <div style="width:100%;height:5px;background:var(--bg3);border-radius:3px;margin-top:8px">
+      <div id="tl-fill" style="height:5px;border-radius:3px;background:var(--grn);width:8%;transition:all .5s"></div>
+    </div>
+  </div>
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+    <div class="srow"><span class="lbl">Active alerts</span><span class="val" id="n-alerts">0</span></div>
+    <div class="srow"><span class="lbl">Enrolled users</span><span class="val" id="n-users">—</span></div>
+    <div class="srow"><span class="lbl">Per-user models</span><span class="val" id="n-models">—</span></div>
+  </div>
+  <div style="display:flex;gap:6px;margin-top:10px">
+    <button class="btn btn-ghost" style="flex:1;font-size:10px" onclick="clearAllAlerts()">↺ Clear Alerts</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:10px" onclick="showResetModal()">🔒 Reset Profile</button>
+  </div>
+</div>
+
+<!-- ── LAYER 3 LIVE RISK SCORE ── -->
+<div class="card">
+  <div class="ct"><span class="dot"></span>LAYER 3 — LIVE RISK SCORE</div>
+  <div class="gw">
+    <div class="garc-wrap">
+      <svg viewBox="0 0 160 160">
+        <path d="M14 122 A66 66 0 0 1 146 122" fill="none" stroke="var(--bg3)" stroke-width="13" stroke-linecap="round"/>
+        <path id="g-arc" d="M14 122 A66 66 0 0 1 146 122" fill="none"
+              stroke="var(--grn)" stroke-width="13" stroke-linecap="round"
+              stroke-dasharray="207" stroke-dashoffset="207"
+              style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+      </svg>
+    </div>
+    <div class="gpct" id="g-pct" style="color:var(--grn)">—</div>
+    <div class="gsub" id="g-sub">Waiting for agent data</div>
+    <div class="dchip" id="g-chip">WAITING</div>
+  </div>
+
+  <!-- Threshold bar — shows threshold moving when context changes -->
+  <div class="tbar-section">
+    <div class="tbar-labels">
+      <span>RISK SCORE</span>
+      <span id="thresh-lbl" style="color:var(--pur);font-weight:700">THRESHOLD —</span>
+    </div>
+    <div class="tbar">
+      <div class="tbar-fill" id="t-fill" style="width:0%;background:var(--grn)"></div>
+      <div class="tbar-mark" id="t-mark" style="left:65%"></div>
+    </div>
+    <div class="tbar-legend"><span>0 — safe</span><span>1.0 — danger</span></div>
+  </div>
+
+  <!-- Compliance context -->
+  <div class="comp-box" style="margin-top:10px">
+    <div class="comp-std" id="comp-std">NIST SP 800-207</div>
+    <div class="comp-req" id="comp-req">Zero Trust Architecture — continuous verification</div>
+  </div>
+</div>
+
+<!-- ── SESSION MONITOR ── -->
+<div class="card">
+  <div class="ct"><span class="dot"></span>SESSION ACTIVITY MONITOR</div>
+  <div class="srow">
+    <span class="lbl">Detected context</span>
+    <span class="val"><span class="ctx-badge ctx-n" id="mon-ctx">normal_browsing</span></span>
+  </div>
+  <div class="srow">
+    <span class="lbl">Active window</span>
+    <span class="val" id="mon-win" style="font-size:9px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+  </div>
+  <div class="srow">
+    <span class="lbl">Process</span>
+    <span class="val" id="mon-proc">—</span>
+  </div>
+  <div class="srow">
+    <span class="lbl">Alert override</span>
+    <span class="val" id="mon-ov">No</span>
+  </div>
+  <div class="srow">
+    <span class="lbl">Threshold now</span>
+    <span class="val" id="mon-thresh" style="color:var(--pur)">—</span>
+  </div>
+  <div class="srow">
+    <span class="lbl">Monitor active</span>
+    <span class="val" id="mon-active">—</span>
+  </div>
+</div>
+
+<!-- ── KEYSTROKE AGENT ── -->
+<div class="card">
+  <div class="ct"><span class="dot"></span>KEYSTROKE AGENT STATUS</div>
+  <div class="agent-row"><span class="agent-lbl">Running</span><span class="agent-val" id="ag-run">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Profile built</span><span class="agent-val" id="ag-prof">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Profile updates</span><span class="agent-val" id="ag-upd">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Sessions scored</span><span class="agent-val" id="ag-sc">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Buffer (keystrokes)</span><span class="agent-val" id="ag-buf">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Last risk score</span><span class="agent-val" id="ag-last">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Last decision</span><span class="agent-val" id="ag-dec">—</span></div>
+  <div class="agent-row"><span class="agent-lbl">Profile saved to disk</span><span class="agent-val" id="ag-save">—</span></div>
+</div>
+
+<!-- ── SIMULATE ATTACKS ── -->
+<div class="card">
+  <div class="ct"><span class="dot"></span>SIMULATE CROSS-LAYER ATTACKS</div>
+  <p style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:10px;line-height:1.6">
+    Trigger alerts from other layers.<br>
+    Layer 3 threshold drops + score boosts immediately.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    <button class="sim-btn sb1" onclick="simLayer(1,'port_scan','Suspicious port scan — 192.168.1.105','high')">⚡ Network Intrusion</button>
+    <button class="sim-btn sb2" onclick="simLayer(2,'file_encryption','Mass encryption C:/Users/','high')">☣ Ransomware</button>
+    <button class="sim-btn sb4" onclick="simLayer(4,'deepfake_call','Deepfake in video call','medium')">👁 Deepfake</button>
+    <button class="sim-btn sb4" onclick="simLayer(4,'phishing_email','AI phishing email blocked','medium')">📧 Phishing</button>
+  </div>
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+    <div class="srow"><span class="lbl">Threshold effect</span><span class="val" style="color:var(--red)" id="td-drop">—</span></div>
+    <div class="srow"><span class="lbl">Score effect</span><span class="val" style="color:var(--pur)" id="td-boost">—</span></div>
+  </div>
+  <button class="sim-btn sb-clr" style="margin-top:6px" onclick="clearAllAlerts()">↺ Clear All Alerts</button>
+</div>
+
+<!-- ── LIVE ALERT FEED ── -->
+<div class="card half">
+  <div class="ct"><span class="dot"></span>LIVE ALERT FEED</div>
+  <div id="af"><div class="af-item"><span class="af-time">System started — all layers initialised</span></div></div>
+</div>
+
+<!-- ── AUDIT LOG ── -->
+<div class="card half">
+  <div class="ct"><span class="dot"></span>AUDIT LOG <span style="margin-left:auto;font-size:9px;color:var(--mut)" id="audit-count"></span></div>
+  <div class="ascroll">
+    <table class="atbl">
+      <thead><tr>
+        <th>TIME</th><th>EVENT</th><th>LAYER</th>
+        <th>RISK</th><th>DECISION</th><th>CONTEXT</th>
+      </tr></thead>
+      <tbody id="audit-body"></tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<!-- PIN RESET MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <h2>🔒 Profile Reset</h2>
+    <p>Enter your 4-digit PIN to reset the behavioral profile.<br>
+       This will delete the enrolled profile and the agent will re-enroll from scratch.</p>
+    <input type="password" class="pin-input" id="pin-input"
+           maxlength="4" placeholder="••••"
+           onkeydown="if(event.key==='Enter')doReset()">
+    <div class="modal-err" id="pin-err"></div>
+    <div class="modal-btns">
+      <button class="btn btn-pur" onclick="doReset()">CONFIRM RESET</button>
+      <button class="btn btn-ghost" onclick="closeResetModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// CLOCK
+// ════════════════════════════════════════
+function tick(){
+  document.getElementById('clock-pill').textContent =
+    new Date().toLocaleTimeString('en',{hour12:false});
+}
+setInterval(tick,1000); tick();
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+const C={low:'var(--grn)',medium:'var(--amb)',high:'var(--red)',critical:'var(--red)'};
+const DT={allow:'ALLOW ✓',warn:'WARNING ⚠',step_up_auth:'STEP-UP AUTH 🔒'};
+const DC={allow:'allow',  warn:'warn',      step_up_auth:'lock'};
+const THRESH_MAP={normal_browsing:65,sensitive_access:40,financial:35,under_attack:25};
+const COMP_MAP={
+  financial:        {std:'PSD2 — Article 97',      req:'Strong Customer Authentication required'},
+  sensitive_access: {std:'GDPR Art.25 + NIST ZTA', req:'Privacy by design + Zero Trust verification'},
+  normal_browsing:  {std:'NIST SP 800-207',         req:'Zero Trust Architecture — continuous verification'},
+  under_attack:     {std:'ISO 27001 A.16',           req:'Incident response mode — elevated authentication'},
+};
+const CTX_CLS={normal_browsing:'ctx-n',sensitive_access:'ctx-s',financial:'ctx-f',under_attack:'ctx-a'};
+const LAYER_NAMES={1:'Network Guardian',2:'Ransomware Killer',3:'Zero-Trust Auth',4:'Content Threat'};
+
+async function fetchJ(url){const r=await fetch(url);return r.json();}
+async function postJ(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+
+// ════════════════════════════════════════
+// GAUGE UPDATE
+// ════════════════════════════════════════
+function updateGauge(pct, lvl, dec, ctx, threshold, boost){
+  const color = C[lvl]||'var(--grn)';
+  const TOTAL = 207;
+
+  document.getElementById('g-arc').style.strokeDashoffset = TOTAL-(pct/100)*TOTAL;
+  document.getElementById('g-arc').style.stroke           = color;
+  document.getElementById('g-pct').textContent  = pct+'%';
+  document.getElementById('g-pct').style.color  = color;
+  document.getElementById('g-sub').textContent  = (ctx||'').replace(/_/g,' ');
+
+  const chip=document.getElementById('g-chip');
+  chip.textContent = DT[dec]||dec;
+  chip.className   = 'dchip '+(DC[dec]||'');
+
+  // Threshold bar
+  const tp = Math.round((threshold||0.65)*100);
+  document.getElementById('t-fill').style.width      = pct+'%';
+  document.getElementById('t-fill').style.background = color;
+  document.getElementById('t-mark').style.left       = tp+'%';
+  document.getElementById('thresh-lbl').textContent  = `THRESHOLD ${tp}%`;
+
+  // Compliance
+  const comp = COMP_MAP[ctx]||COMP_MAP['normal_browsing'];
+  document.getElementById('comp-std').textContent = comp.std;
+  document.getElementById('comp-req').textContent = comp.req;
+
+  // Boost display
+  if(boost!==undefined && boost!==null){
+    document.getElementById('td-boost').textContent = boost>0 ? '+'+boost.toFixed(2) : '0';
+  }
+}
+
+// ════════════════════════════════════════
+// SESSION MONITOR UPDATE
+// ════════════════════════════════════════
+function updateSessionMonitor(sm){
+  if(!sm) return;
+  const ctx = sm.current_context||'normal_browsing';
+
+  // Context badge
+  const el = document.getElementById('mon-ctx');
+  el.textContent = ctx.replace(/_/g,' ');
+  el.className   = 'ctx-badge '+(CTX_CLS[ctx]||'ctx-n');
+
+  // Window and process
+  document.getElementById('mon-win').textContent  = sm.current_window||'—';
+  document.getElementById('mon-proc').textContent = sm.current_process||'—';
+  document.getElementById('mon-ov').textContent   = sm.alert_override?'YES — THREAT ACTIVE':'No';
+  document.getElementById('mon-ov').style.color   = sm.alert_override?'var(--red)':'var(--mut2)';
+  document.getElementById('mon-active').textContent = sm.monitoring_active?'✓ Active':'✗ Stopped';
+
+  // Threshold for current context
+  const tp = THRESH_MAP[ctx]||65;
+  document.getElementById('mon-thresh').textContent = tp+'%';
+
+  // Also update the gauge threshold marker to match current context
+  // This makes the threshold bar move when user switches apps — visual proof of novelty
+  document.getElementById('t-mark').style.left      = tp+'%';
+  document.getElementById('thresh-lbl').textContent = `THRESHOLD ${tp}%`;
+}
+
+// ════════════════════════════════════════
+// AGENT STATUS UPDATE
+// ════════════════════════════════════════
+function updateAgent(ag){
+  if(!ag||!ag.running) return;
+  document.getElementById('ag-run').textContent  = ag.running?'✓ Running':'✗ Stopped';
+  document.getElementById('ag-run').style.color  = ag.running?'var(--grn)':'var(--red)';
+  document.getElementById('ag-prof').textContent = ag.profile_built?'✓ Yes':'Building...';
+  document.getElementById('ag-upd').textContent  = ag.n_updates||'0';
+  document.getElementById('ag-sc').textContent   = ag.n_scored||'0';
+  document.getElementById('ag-buf').textContent  = ag.buffer_size||'0';
+  document.getElementById('ag-last').textContent = ag.last_score!=null?ag.last_score+'%':'—';
+  document.getElementById('ag-dec').textContent  = ag.last_decision||'—';
+  document.getElementById('ag-save').textContent = ag.profile_saved?'✓ Saved':'Not saved';
+
+  // Update agent pill in header
+  const pill = document.getElementById('agent-pill');
+  if(ag.running){
+    pill.textContent = ag.profile_built
+      ? `AGENT ● ${ag.last_score!=null?ag.last_score+'%':'...'}`
+      : 'AGENT BUILDING...';
+    pill.className = 'pill '+(ag.profile_built?'grn':'amb');
+  }
+}
+
+// ════════════════════════════════════════
+// MAIN STATUS POLL
+// ════════════════════════════════════════
+async function pollStatus(){
+  try{
+    const d = await fetchJ('/api/platform/status');
+
+    // ── Threat level ──
+    const tl    = d.platform_threat_level||'low';
+    const tlEl  = document.getElementById('tl-val');
+    const tlCol = C[tl]||'var(--grn)';
+    tlEl.textContent   = tl.toUpperCase();
+    tlEl.style.color   = tlCol;
+    document.getElementById('tl-sub').textContent = {
+      low:'All systems nominal',
+      medium:'Elevated activity — monitoring closely',
+      high:'Active threat — thresholds tightened',
+      critical:'CRITICAL — Maximum authentication required',
+    }[tl]||'';
+    document.getElementById('tl-fill').style.width      = {low:'8%',medium:'40%',high:'72%',critical:'100%'}[tl];
+    document.getElementById('tl-fill').style.background = tlCol;
+
+    // Banner
+    document.getElementById('banner').style.display =
+      (tl==='high'||tl==='critical')?'block':'none';
+
+    // Pills
+    const na = d.n_active_alerts||0;
+    const ap = document.getElementById('alert-pill');
+    ap.textContent = na+' ALERT'+(na!==1?'S':'');
+    ap.className   = 'pill '+(na>0?'red':'');
+    document.getElementById('n-alerts').textContent = na;
+    document.getElementById('n-users').textContent  = d.n_enrolled_users||'—';
+    document.getElementById('n-models').textContent = d.n_per_user_models||'—';
+
+    // ── Layer states ──
+    const ls = d.layer_states||{};
+    for(const [num,state] of Object.entries(ls)){
+      const n   = parseInt(num);
+      const sd  = document.getElementById('sd'+n);
+      const tc  = document.getElementById('tc'+n);
+      const st  = document.getElementById('st'+n);
+      const lc  = document.getElementById('lc'+n);
+      if(!sd) continue;
+      sd.className = 'sdot '+(state.status||'monitoring');
+      if(st) st.textContent = (state.status||'monitoring').charAt(0).toUpperCase()+(state.status||'').slice(1);
+      if(tc){
+        const label = n===3?'step-up events':'threats detected';
+        tc.textContent = (state.threat_count||0)+' '+label;
+      }
+      if(lc) lc.classList.toggle('alerting',state.status==='alert'||state.status==='elevated');
+    }
+
+    // ── Session monitor ──
+    updateSessionMonitor(d.session_monitor);
+
+    // ── Agent score → gauge ──
+    const ag_score = d.latest_agent_score;
+    if(ag_score && ag_score.risk_percent!=null){
+      updateGauge(
+        ag_score.risk_percent,
+        ag_score.risk_level||'low',
+        ag_score.decision||'allow',
+        ag_score.context||'normal_browsing',
+        ag_score.adaptive_threshold,
+        ag_score.alert_boost
+      );
+    }
+
+    // ── Agent status ──
+    updateAgent(d.agent_status);
+
+    // ── Alert feed ──
+    if(d.recent_events&&d.recent_events.length>0){
+      const feed = document.getElementById('af');
+      feed.innerHTML = d.recent_events.slice(0,8).map(ev=>{
+        const sev = ev.severity||'info';
+        const ts  = new Date(ev.timestamp).toLocaleTimeString('en',{hour12:false});
+        return `<div class="af-item ${sev}">
+          <div class="af-src">Layer ${ev.layer} — ${LAYER_NAMES[ev.layer]||''}</div>
+          <div class="af-time">[${ts}] ${ev.type||''}</div>
+          <div class="af-msg">${ev.message||''}</div>
+        </div>`;
+      }).join('');
+    }
+
+  }catch(e){
+    console.error('Status poll error:',e);
+  }
+}
+
+// ════════════════════════════════════════
+// AUDIT LOG POLL
+// ════════════════════════════════════════
+async function pollAudit(){
+  try{
+    const d = await fetchJ('/api/platform/audit-log?limit=15');
+    document.getElementById('audit-count').textContent = d.total?`(${d.total} total)`:'';
+    const tb = document.getElementById('audit-body');
+    if(!d.entries||d.entries.length===0){
+      tb.innerHTML='<tr><td colspan="6" style="color:var(--mut);text-align:center;padding:10px">No events yet</td></tr>';
+      return;
+    }
+    const dcol={allow:'var(--grn)',warn:'var(--amb)',passed:'var(--grn)',
+                failed:'var(--red)',step_up_auth:'var(--red)'};
+    tb.innerHTML = d.entries.slice(0,15).map(e=>{
+      const ts = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en',{hour12:false}) : '—';
+      const dc = dcol[e.decision]||'var(--mut)';
+      return `<tr>
+        <td>${ts}</td>
+        <td>${e.event_type||'—'}</td>
+        <td>${e.layer||'—'}</td>
+        <td>${e.risk_percent?e.risk_percent+'%':'—'}</td>
+        <td style="color:${dc}">${e.decision||'—'}</td>
+        <td>${(e.context||'—').replace(/_/g,' ')}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){}
+}
+
+// ════════════════════════════════════════
+// SIMULATE LAYER THREATS
+// ════════════════════════════════════════
+async function simLayer(num,etype,msg,severity){
+  try{
+    const ep={1:'/api/layer1/threat',2:'/api/layer2/threat',4:'/api/layer4/threat'}[num];
+    const d = await postJ(ep,{event_type:etype,severity,message:msg,details:msg});
+    const reductions={network_guardian:0.10,ransomware_killer:0.15,content_threat_detection:0.08};
+    const boosts    ={network_guardian:0.10,ransomware_killer:0.15,content_threat_detection:0.08};
+    const src={1:'network_guardian',2:'ransomware_killer',4:'content_threat_detection'}[num];
+    document.getElementById('td-drop').textContent  = '-'+(reductions[src]||0.08).toFixed(2);
+    document.getElementById('td-boost').textContent = '+'+(boosts[src]||0.08).toFixed(2);
+    await pollStatus();
+  }catch(e){console.error('Sim error:',e);}
+}
+
+async function clearAllAlerts(){
+  await fetch('/api/platform/alerts',{method:'DELETE'});
+  document.getElementById('td-drop').textContent  = '—';
+  document.getElementById('td-boost').textContent = '—';
+  await pollStatus();
+}
+
+// ════════════════════════════════════════
+// PIN RESET
+// ════════════════════════════════════════
+// PIN is stored as a hash — not plain text
+// On first use, any 4-digit PIN sets the profile PIN
+// Stored in sessionStorage for this session only
+// For production: store hashed PIN in a server-side config file
+
+function showResetModal(){
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('reset-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+function closeResetModal(){
+  document.getElementById('reset-modal').classList.remove('show');
+}
+
+async function doReset(){
+  const pin = document.getElementById('pin-input').value.trim();
+  if(pin.length!==4||!/^\d{4}$/.test(pin)){
+    document.getElementById('pin-err').textContent='Enter exactly 4 digits';
+    return;
+  }
+
+  // Check/set PIN — stored as simple hash in sessionStorage
+  const stored = sessionStorage.getItem('ns_reset_pin');
+  const hashed = await hashPIN(pin);
+
+  if(!stored){
+    // First time — this PIN becomes the reset PIN
+    sessionStorage.setItem('ns_reset_pin', hashed);
+  } else if(stored !== hashed){
+    document.getElementById('pin-err').textContent = 'Incorrect PIN';
+    document.getElementById('pin-input').value = '';
+    return;
+  }
+
+  // PIN correct — reset profile
+  try{
+    await fetch('/api/platform/alerts',{method:'DELETE'});
+    // Tell agent to reset by deleting enrollment
+    await postJ('/api/enroll',{user_id:9001,features:[]});
+    closeResetModal();
+    alert('Profile reset. The agent will re-enroll automatically from your next typing session.');
+    await pollStatus();
+  }catch(e){
+    document.getElementById('pin-err').textContent = 'Reset failed: '+e.message;
+  }
+}
+
+async function hashPIN(pin){
+  const buf  = new TextEncoder().encode(pin);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Close modal on overlay click
+document.getElementById('reset-modal').addEventListener('click',function(e){
+  if(e.target===this) closeResetModal();
+});
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+async function init(){
+  await pollStatus();
+  await pollAudit();
+  setInterval(pollStatus, 3000);
+  setInterval(pollAudit,  5000);
+}
+init();
+</script>
+</body>
+</html>
