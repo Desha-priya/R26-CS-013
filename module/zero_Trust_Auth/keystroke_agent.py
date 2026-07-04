@@ -29,6 +29,18 @@
 #   3. Profile saved to disk on first build and each update
 #   4. Step-up auth triggers face_liveness.py directly on this machine
 
+# keystroke_agent.py
+# NeuraShield — Background Keystroke Capture Agent
+# Runs silently in background, captures keystrokes from ANY application
+# Builds and continuously updates the user's behavioral profile
+# Sends scores to the risk engine periodically
+#
+# This is the REAL production approach:
+#   - No browser enrollment box needed
+#   - User just works normally
+#   - System learns them automatically
+#   - Profile updates every 5 minutes
+#   - Scoring happens every 30 seconds
 
 import time
 import threading
