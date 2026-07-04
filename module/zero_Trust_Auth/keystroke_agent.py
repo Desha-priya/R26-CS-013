@@ -236,13 +236,14 @@ class KeystrokeAgent:
     # PROFILE BUILD AND UPDATE
     # ─────────────────────────────────────────────────────
     def _build_profile(self):
-          #  """
-          #  Build or update behavioral profile from current buffer.
-           # First call: initial enrollment.
-          #  Subsequent calls: adaptive update - profile evolves with user.
-          #  """
-        ks = list(self.buffer) 
-        if len(ks) < MIN_KS_TO_BUILD:   # 80 as you chose
+        """
+        Build or update behavioral profile from current buffer.
+        First call: initial enrollment.
+        Subsequent calls: adaptive update — profile evolves with user.
+        """
+        ks = list(self.buffer)
+        if len(ks) < MIN_KS_TO_BUILD:
+            logger.info(f"[Agent] Need {MIN_KS_TO_BUILD} keystrokes, have {len(ks)}")
             return
 
         features = self._extract_features(ks[-WINDOW_SIZE:])
@@ -250,21 +251,33 @@ class KeystrokeAgent:
             return
 
         try:
-            # Use enroll-combined if mouse data available, else simple enroll
             resp = requests.post(
                 f"{API_BASE}/api/enroll",
                 json={"user_id": self.user_id, "features": features},
                 timeout=5
             )
             if resp.status_code == 200:
-                self.profile_built = True
+                self.profile_built     = True
                 self.baseline_features = features
-                self.n_updates += 1
+                self.n_updates        += 1
+
+                # Save to disk
                 self._save_profile(features)
-                logger.info(f"[Agent] Profile {'updated' if self.n_updates > 1 else 'CREATED'} #{self.n_updates}")
+
+                logger.info(
+                    f"[Agent] Profile {'updated' if self.n_updates > 1 else 'BUILT'} "
+                    f"#{self.n_updates} | "
+                    f"dwell={features[0]*1000:.0f}ms | "
+                    f"flight={features[5]*1000:.0f}ms | "
+                    f"from {len(ks)} keystrokes"
+                )
+            else:
+                logger.warning(f"[Agent] Enroll failed: {resp.status_code} {resp.text[:100]}")
+
+        except requests.exceptions.ConnectionError:
+            logger.warning("[Agent] Server not reachable for enrollment")
         except Exception as e:
-            logger.warning(f"[Agent] Profile build failed: {e}")
-    
+            logger.error(f"[Agent] Profile build error: {e}")
 
     # ─────────────────────────────────────────────────────
     # SCORING
@@ -352,35 +365,46 @@ class KeystrokeAgent:
     def _trigger_step_up(self, risk: int, threshold: float):
         """
         Trigger step-up authentication directly.
-        Opens the face liveness window on this machine.
+        Now respects grace period to avoid spamming the user.
         """
         logger.warning(
             f"[Agent] ⚠ STEP-UP AUTH — risk {risk}% > threshold {threshold*100:.0f}%"
         )
 
-        # Try face liveness first
-        try:
-            from face_liveness import detect_liveness
-            logger.info("[Agent] Opening face liveness check...")
-            result = detect_liveness(timeout_seconds=15)
+        # Check if we are still in grace period from previous successful liveness
+        if hasattr(self, 'last_liveness_success') and self.last_liveness_success is not None:
+            seconds_since = (datetime.now() - self.last_liveness_success).total_seconds()
+            if seconds_since < self.liveness_grace_seconds:
+                logger.info(f"[Agent] Liveness grace period active ({int(self.liveness_grace_seconds - seconds_since)}s left) — skipping new check")
+                return
 
-            if result['passed']:
-                logger.info(f"[Agent] ✓ Liveness PASSED — {result['reason']}")
-                # Report pass to server
-                requests.post(
-                    f"{API_BASE}/api/liveness-check",
-                    timeout=2
-                )
+        # Try face liveness
+        try:
+            from face_liveness import run_from_api
+            logger.info("[Agent] Opening face liveness check...")
+            result = run_from_api(timeout_seconds=18)
+
+            if result.get('passed', False):
+                logger.info(f"[Agent] ✓ Liveness PASSED")
+                if hasattr(self.risk_engine, 'last_liveness_success'):
+                    self.risk_engine.last_liveness_success = datetime.now()
+                
+                # Report to server with longer timeout
+                try:
+                    requests.post(
+                        f"{API_BASE}/api/liveness-check",
+                        json={"passed": True, "reason": result.get('reason','')},
+                        timeout=10
+                    )
+                except Exception as e:
+                    logger.warning(f"[Agent] Could not report liveness to server: {e}")
             else:
-                logger.warning(f"[Agent] ✗ Liveness FAILED — {result['reason']}")
-                logger.warning("[Agent] Session should be locked")
+                logger.warning(f"[Agent] ✗ Liveness FAILED — {result.get('reason','')}")
 
         except ImportError:
             logger.warning("[Agent] face_liveness.py not found")
-            logger.warning("[Agent] Step-up auth requires face_liveness.py in same folder")
         except Exception as e:
             logger.error(f"[Agent] Liveness error: {e}")
-
     # ─────────────────────────────────────────────────────
     # BACKGROUND LOOPS
     # ─────────────────────────────────────────────────────
