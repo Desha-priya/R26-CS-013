@@ -206,6 +206,42 @@ class SessionMonitor:
 
         return DEFAULT_CONTEXT
 
+    def update_from_url(self, url: str, title: str = ""):
+        """
+        Called by browser extension.
+        Uses full URL for better context detection.
+        """
+        url_lower = url.lower()
+        title_lower = title.lower()
+
+        # High priority domain-based detection
+        financial_domains = [
+            "hdfcbank", "sbi", "icici", "axisbank", "kotak", "paypal", "stripe",
+            "razorpay", "paytm", "phonepe", "google.com/pay", "wise.com", "revolut",
+            "netbanking", "onlinebanking", "banking", "payment", "checkout"
+        ]
+
+        sensitive_domains = [
+            "admin", "regedit", "localhost:8000", "dashboard", "portal", "console"
+        ]
+
+        new_context = "normal_browsing"
+
+        if any(domain in url_lower for domain in financial_domains):
+            new_context = "financial"
+        elif any(domain in url_lower for domain in sensitive_domains):
+            new_context = "sensitive_access"
+        else:
+            # Fallback to old keyword method
+            new_context = self._determine_context(title_lower, "")
+
+        with self._lock:
+            if new_context != self.current_context:
+                print(f"[SessionMonitor] Context changed via Extension → {new_context} | URL: {url[:60]}")
+            self.current_context = new_context
+            self.current_window = title
+            self.last_updated = datetime.now()
+
 
 # ── Singleton instance — shared across the app ────────────
 monitor = SessionMonitor()

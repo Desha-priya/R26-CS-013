@@ -32,6 +32,8 @@ import joblib
 import os, sys, csv, pathlib, threading, time
 from datetime import datetime
 from collections import deque
+from pydantic import BaseModel
+
 
 sys.path.append(os.path.dirname(__file__))
 from risk_engine_v2 import RiskEngine
@@ -85,6 +87,9 @@ def load_per_user_models():
     print(f"[Platform] Loaded {count} per-user models")
 
 load_per_user_models()
+# Make per-user models available to RiskEngine without import
+RiskEngine.per_user_models = per_user_models
+print(f"[Platform] Shared {len(per_user_models)} per-user models with RiskEngine")
 
 # ── Audit log ──────────────────────────────────────────────
 AUDIT_LOG  = "audit_log.csv"
@@ -677,6 +682,28 @@ async def layer4_threat(req: LayerEventRequest):
     add_event(4, req.event_type, msg, req.severity)
     write_audit('layer4_threat', layer=4, details=msg)
     return {"status":"threat_raised","message":msg,"layer3_notified":True}
+
+class ContextUpdate(BaseModel):
+    url: str
+    title: str = ""
+    timestamp: str = ""
+
+@app.post("/api/context-update")
+async def context_update(data: ContextUpdate):
+    """
+    Receives current tab URL + title from the browser extension
+    and updates the session monitor.
+    """
+    try:
+        monitor.update_from_url(data.url, data.title)
+        return {
+            "status": "received",
+            "url": data.url,
+            "title": data.title,
+            "context": monitor.current_context
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # ══════════════════════════════════════════════════════════
 # RUN
