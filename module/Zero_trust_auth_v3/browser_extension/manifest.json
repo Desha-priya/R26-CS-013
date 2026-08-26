@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "NeuraShield Context Detector",
+  "version": "1.0",
+  "description": "Sends current tab URL and title to NeuraShield for context-aware risk scoring",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "NeuraShield Context"
+  }
+}

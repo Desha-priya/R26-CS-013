@@ -1,0 +1,14 @@
+The model will:
+
+Input: 50 × 16
+Shared BiLSTM encoder
+Dense embedding layer
+L2-normalized embeddings
+Euclidean distance between embeddings
+Contrastive loss
+Genuine pairs = same participant
+Impostor pairs = different participants
+Balanced genuine/impostor training pairs
+Validation used to select the authentication threshold
+Test remains untouched until final evaluation
+Save the trained model and metrics
