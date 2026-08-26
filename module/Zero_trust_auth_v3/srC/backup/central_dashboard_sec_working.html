@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuraShield — Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F9FAFB; --surface:#FFFFFF; --surface-2:#FAFAFB;
+  --border:#E5E7EB; --border-strong:#D1D5DB;
+  --text:#111827; --text-2:#4B5563; --text-3:#9CA3AF;
+  --accent:#4F46E5; --accent-hover:#4338CA; --accent-soft:#EEF2FF; --accent-border:#C7D2FE;
+  --success:#059669; --success-soft:#ECFDF5; --success-border:#A7F3D0;
+  --warning:#D97706; --warning-soft:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626; --danger-soft:#FEF2F2; --danger-border:#FECACA;
+  --info:#2563EB; --info-soft:#EFF6FF; --info-border:#BFDBFE;
+  --radius:10px; --radius-sm:6px;
+  --shadow-xs:0 1px 2px rgba(16,24,40,.04);
+  --shadow-sm:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button{font-family:inherit}
+::selection{background:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ═══ LAYOUT ═══ */
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.side-logo{display:flex;align-items:center;gap:9px;padding:18px 20px;border-bottom:1px solid var(--border)}
+.side-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.side-logo-mark svg{width:16px;height:16px}
+.side-logo-text{font-weight:700;font-size:14.5px;letter-spacing:-.01em;color:var(--text)}
+.side-logo-sub{font-size:10.5px;color:var(--text-3);margin-top:-1px}
+
+.side-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-section{margin-bottom:18px}
+.nav-label{font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:0 10px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;transition:background .12s,color .12s;position:relative;margin-bottom:1px}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;stroke:currentColor}
+.nav-item:hover{background:var(--surface-2);color:var(--text)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-item .nav-badge{margin-left:auto;font-size:10.5px;font-weight:600;background:var(--danger);color:#fff;border-radius:99px;padding:1px 6px;min-width:16px;text-align:center;display:none}
+.nav-item .nav-badge.show{display:inline-block}
+
+.side-foot{padding:12px 16px;border-top:1px solid var(--border)}
+.side-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2)}
+.status-dot-sm{width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0}
+.side-version{font-size:10.5px;color:var(--text-3);margin-top:3px;font-family:var(--mono)}
+
+/* ═══ MAIN ═══ */
+.main{display:flex;flex-direction:column;min-width:0}
+
+/* ═══ TOPBAR ═══ */
+.topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:20}
+.page-title-wrap{display:flex;flex-direction:column;justify-content:center}
+.page-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.page-sub{font-size:11.5px;color:var(--text-3);margin-top:-1px}
+
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 11px;width:240px;transition:border-color .12s}
+.search-box:focus-within{border-color:var(--accent);background:var(--surface)}
+.search-box svg{width:15px;height:15px;stroke:var(--text-3);flex-shrink:0}
+.search-box input{border:none;background:none;outline:none;font-size:13px;color:var(--text);width:100%;font-family:inherit}
+.search-box input::placeholder{color:var(--text-3)}
+
+.icon-btn{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .12s,border-color .12s}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.icon-btn svg{width:16px;height:16px;stroke:var(--text-2)}
+.icon-btn .badge-dot{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 3px;border-radius:99px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+
+.avatar-menu{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:99px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:background .12s}
+.avatar-menu:hover{background:var(--surface-2)}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.avatar-name{font-size:12.5px;font-weight:600;color:var(--text)}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;padding:24px 28px 40px;max-width:1440px;width:100%}
+.view{display:none}
+.view.active{display:block}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-size:20px;font-weight:700;letter-spacing:-.015em;color:var(--text)}
+.page-header p{font-size:13px;color:var(--text-2);margin-top:3px}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.btn svg{width:14px;height:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-secondary{background:var(--surface);border-color:var(--border-strong);color:var(--text)}
+.btn-secondary:hover:not(:disabled){background:var(--surface-2)}
+.btn-danger-outline{background:var(--surface);border-color:var(--danger-border);color:var(--danger)}
+.btn-danger-outline:hover:not(:disabled){background:var(--danger-soft)}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ═══ GRID ═══ */
+.grid{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-main{grid-template-columns:1.15fr .85fr}
+@media(max-width:1180px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-main{grid-template-columns:1fr}}
+
+/* ═══ CARD ═══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-xs)}
+.card-pad{padding:18px}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-header h3{font-size:13.5px;font-weight:600;color:var(--text)}
+.card-header .card-header-sub{font-size:11.5px;color:var(--text-3);margin-top:1px}
+.card-header-right{display:flex;align-items:center;gap:8px}
+
+/* ═══ KPI CARDS ═══ */
+.kpi{padding:16px 18px}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpi-label{font-size:12px;font-weight:500;color:var(--text-2)}
+.kpi-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-icon svg{width:15px;height:15px}
+.kpi-value{font-size:26px;font-weight:700;letter-spacing:-.02em;color:var(--text);font-family:var(--mono)}
+.kpi-foot{display:flex;align-items:center;gap:5px;margin-top:7px;font-size:11.5px;color:var(--text-3)}
+.kpi-trend{display:inline-flex;align-items:center;gap:2px;font-weight:600;padding:1px 5px;border-radius:4px;font-size:10.5px}
+.kpi-trend.up{color:var(--danger);background:var(--danger-soft)}
+.kpi-trend.down{color:var(--success);background:var(--success-soft)}
+.kpi-trend.flat{color:var(--text-3);background:var(--surface-2)}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2.5px 8px;border-radius:99px;border:1px solid;white-space:nowrap}
+.badge svg{width:9px;height:9px}
+.badge-dot-only{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.b-success{background:var(--success-soft);color:var(--success);border-color:var(--success-border)}
+.b-warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning-border)}
+.b-danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-border)}
+.b-info{background:var(--info-soft);color:var(--info);border-color:var(--info-border)}
+.b-accent{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-border)}
+.b-neutral{background:var(--surface-2);color:var(--text-2);border-color:var(--border)}
+
+/* ═══ LAYER CARDS ═══ */
+.layer-card{padding:16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);transition:border-color .12s,box-shadow .12s}
+.layer-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-sm)}
+.layer-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.layer-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.layer-icon svg{width:17px;height:17px}
+.layer-name{font-size:13.5px;font-weight:600;color:var(--text);margin-top:11px}
+.layer-desc{font-size:11.5px;color:var(--text-3);margin-top:2px;line-height:1.5;min-height:32px}
+.layer-stats{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.layer-count{font-size:11.5px;color:var(--text-2)}
+.layer-count b{color:var(--text);font-family:var(--mono)}
+.layer-actions{display:flex;gap:6px;margin-top:12px}
+
+/* ═══ GAUGE ═══ */
+.gauge-row{display:flex;align-items:center;gap:22px;padding:8px 0 4px}
+.gauge-svg-wrap{position:relative;width:132px;height:132px;flex-shrink:0}
+.gauge-svg-wrap svg{width:132px;height:132px;transform:rotate(-90deg)}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-pct{font-size:26px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em;color:var(--text)}
+.gauge-pct-label{font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.gauge-info{flex:1;min-width:0}
+.gauge-info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.gauge-info-row:last-child{border-bottom:none}
+.gauge-info-row .lbl{color:var(--text-2)}
+.gauge-info-row .val{font-weight:600;color:var(--text);font-family:var(--mono);font-size:12px}
+
+/* ═══ THRESHOLD BAR ═══ */
+.tbar-wrap{margin-top:14px}
+.tbar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:500}
+.tbar{height:8px;background:var(--surface-2);border-radius:99px;position:relative;border:1px solid var(--border)}
+.tbar-fill{height:6px;border-radius:99px;position:absolute;top:0;left:0;transition:width .5s ease,background .3s}
+.tbar-mark{position:absolute;top:-3px;width:3px;height:14px;border-radius:2px;background:var(--text);transition:left .5s ease}
+.tbar-mark::after{content:attr(data-label);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;font-family:var(--mono)}
+
+/* ═══ COMPLIANCE ═══ */
+.comp-box{margin-top:14px;padding:11px 13px;border-radius:var(--radius-sm);background:var(--accent-soft);border:1px solid var(--accent-border)}
+.comp-std{font-size:12px;font-weight:700;color:var(--accent)}
+.comp-req{font-size:11px;color:#4338CA;margin-top:2px;line-height:1.4;opacity:.85}
+
+/* ═══ ROW LIST (session monitor / agent status) ═══ */
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.info-row:last-child{border-bottom:none}
+.info-row .lbl{color:var(--text-2);display:flex;align-items:center;gap:6px}
+.info-row .lbl svg{width:13px;height:13px;stroke:var(--text-3)}
+.info-row .val{font-weight:600;color:var(--text);text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:11.5px}
+
+/* ═══ ACTIVITY FEED ═══ */
+.feed{padding:6px 10px}
+.feed-item{display:flex;gap:11px;padding:11px 8px;border-bottom:1px solid var(--border)}
+.feed-item:last-child{border-bottom:none}
+.feed-dot-wrap{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.feed-dot-wrap svg{width:13px;height:13px}
+.feed-body{flex:1;min-width:0}
+.feed-title{font-size:12.5px;font-weight:600;color:var(--text)}
+.feed-msg{font-size:12px;color:var(--text-2);margin-top:1px;line-height:1.4}
+.feed-time{font-size:10.5px;color:var(--text-3);margin-top:3px;font-family:var(--mono)}
+
+/* ═══ TABLE ═══ */
+.table-wrap{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dt thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:9px 14px;font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap}
+table.dt thead th.sortable{cursor:pointer;user-select:none}
+table.dt thead th .sort-ic{width:10px;height:10px;display:inline-block;margin-left:3px;opacity:.5;vertical-align:middle}
+table.dt tbody td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);font-family:var(--mono);white-space:nowrap}
+table.dt tbody tr:hover{background:var(--surface-2)}
+table.dt tbody tr:last-child td{border-bottom:none}
+
+/* ═══ PAGINATION ═══ */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border)}
+.pg-info{font-size:12px;color:var(--text-2)}
+.pg-btns{display:flex;gap:6px}
+.pg-btn{width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-2)}
+.pg-btn:hover:not(:disabled){background:var(--surface-2);border-color:var(--border-strong)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+.pg-btn svg{width:14px;height:14px}
+
+/* ═══ FILTER / SELECT ═══ */
+.select{font-family:inherit;font-size:12.5px;font-weight:500;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.select:focus{outline:none;border-color:var(--accent)}
+
+/* ═══ TOGGLE SWITCH ═══ */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info b{font-size:13px;font-weight:600;color:var(--text);display:block}
+.toggle-info span{font-size:11.5px;color:var(--text-3)}
+.switch{position:relative;width:38px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch-track{position:absolute;inset:0;background:var(--border-strong);border-radius:99px;cursor:pointer;transition:background .15s}
+.switch-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.switch input:checked + .switch-track{background:var(--accent)}
+.switch input:checked + .switch-track::before{transform:translateX(16px)}
+
+/* ═══ EMPTY STATE ═══ */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 20px;text-align:center}
+.empty svg{width:36px;height:36px;stroke:var(--text-3);margin-bottom:10px}
+.empty-title{font-size:13px;font-weight:600;color:var(--text-2)}
+.empty-sub{font-size:12px;color:var(--text-3);margin-top:3px}
+
+/* ═══ SKELETON ═══ */
+.skel{background:linear-gradient(90deg,var(--surface-2) 25%,#F1F2F4 37%,var(--surface-2) 63%);background-size:400% 100%;animation:skel-shine 1.4s ease infinite;border-radius:6px}
+@keyframes skel-shine{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* ═══ CHART ═══ */
+.chart-legend{display:flex;gap:14px;padding:0 18px 14px;font-size:11.5px}
+.legend-item{display:flex;align-items:center;gap:5px;color:var(--text-2)}
+.legend-swatch{width:9px;height:9px;border-radius:2px}
+
+/* ═══ MODAL ═══ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(1px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:380px;width:92%;box-shadow:0 20px 40px rgba(17,24,39,.15)}
+.modal-icon-wrap{width:40px;height:40px;border-radius:9px;background:var(--danger-soft);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.modal-icon-wrap svg{width:20px;height:20px;stroke:var(--danger)}
+.modal h2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.modal p{font-size:12.5px;color:var(--text-2);margin-bottom:16px;line-height:1.55}
+.form-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:block}
+.pin-input{font-family:var(--mono);font-size:20px;letter-spacing:.4em;text-align:center;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);color:var(--text);padding:10px;width:100%;margin-bottom:6px}
+.pin-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field-err{font-size:11.5px;color:var(--danger);min-height:16px;margin-bottom:12px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+
+/* ═══ NOTIF DROPDOWN ═══ */
+.dropdown{position:relative}
+.dropdown-panel{display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 28px rgba(17,24,39,.12);z-index:50;max-height:380px;overflow-y:auto}
+.dropdown-panel.show{display:block}
+.dropdown-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12.5px;font-weight:700;color:var(--text)}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar">
+    <div class="side-logo">
+      <div class="side-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div class="side-logo-text">NeuraShield</div>
+        <div class="side-logo-sub">Cyber Defense Platform</div>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <div class="nav-section">
+        <div class="nav-label">Platform</div>
+        <div class="nav-item active" data-view="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          Overview
+        </div>
+        <div class="nav-item" data-view="layers">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+          Defense Layers
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Security</div>
+        <div class="nav-item" data-view="alerts">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Alert Feed
+          <span class="nav-badge" id="nav-alert-badge">0</span>
+        </div>
+        <div class="nav-item" data-view="audit">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Audit Log
+        </div>
+        <div class="nav-item" data-view="session">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Session Monitor
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Configuration</div>
+        <div class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </div>
+      </div>
+    </nav>
+
+    <div class="side-foot">
+      <div class="side-status"><span class="status-dot-sm" id="sys-dot"></span><span id="sys-text">System online</span></div>
+      <div class="side-version">v3.0.0 · Zero-Trust V3</div>
+    </div>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="page-title-wrap">
+        <div class="page-title" id="topbar-title">Overview</div>
+        <div class="page-sub" id="topbar-sub">Real-time platform status across all defense layers</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="global-search" placeholder="Search audit log, alerts…">
+        </div>
+        <div class="dropdown">
+          <button class="icon-btn" id="notif-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge-dot" id="notif-count" style="display:none">0</span>
+          </button>
+          <div class="dropdown-panel" id="notif-panel">
+            <div class="dropdown-header">Recent notifications</div>
+            <div id="notif-feed"></div>
+          </div>
+        </div>
+        <div class="dropdown">
+          <div class="avatar-menu" id="avatar-btn">
+            <div class="avatar">ZT</div>
+            <span class="avatar-name">Admin</span>
+          </div>
+          <div class="dropdown-panel" id="avatar-panel" style="width:220px">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+              <div style="font-size:12.5px;font-weight:700;color:var(--text)">Signed in as</div>
+              <div style="font-size:11.5px;color:var(--text-3);margin-top:1px">Zero-Trust Auth · Demo session</div>
+            </div>
+            <div style="padding:6px">
+              <a href="/layer3" style="display:block;padding:8px 8px;font-size:12.5px;color:var(--text);text-decoration:none;border-radius:6px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='none'">Open Layer 3 dashboard</a>
+              <a href="/docs" target="_blank" style="display:block;padding:8px 8px;font-size:12.5px;color:var(--text);text-decoration:none;border-radius:6px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='none'">API documentation</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ═══════════ VIEW: OVERVIEW ═══════════ -->
+      <div class="view active" id="view-overview">
+
+        <div class="page-header">
+          <div>
+            <h1>Overview</h1>
+            <p>
+              Live Zero-Trust decisions using Siamese BiLSTM behavioral biometrics,
+              adaptive authentication, and cross-layer security signals.
+            </p>
+          </div>
+          <button class="btn btn-secondary" onclick="clearAllAlerts()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Clear all alerts
+          </button>
+        </div>
+
+        <!-- KPI ROW — ZERO TRUST V3 -->
+      <div class="grid grid-4" style="margin-bottom:16px">
+
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Current risk</span>
+            <div class="kpi-icon" id="kpi-risk-icon" style="background:var(--success-soft)">
+              <svg viewBox="0 0 24 24" fill="none"
+                  stroke="var(--success)" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-risk">—</div>
+          <div class="kpi-foot" id="kpi-risk-sub">
+            Waiting for behavioral score
+          </div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Behavioral similarity</span>
+            <div class="kpi-icon" style="background:var(--accent-soft)">
+              <svg viewBox="0 0 24 24" fill="none"
+                  stroke="var(--accent)" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M8 12l2.5 2.5L16 9"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-similarity">—</div>
+          <div class="kpi-foot">
+            Siamese BiLSTM V3 cosine similarity
+          </div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Adaptive boundary</span>
+            <div class="kpi-icon" style="background:var(--info-soft)">
+              <svg viewBox="0 0 24 24" fill="none"
+                  stroke="var(--info)" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16"/>
+                <path d="M4 12h16"/>
+                <path d="M4 18h16"/>
+                <circle cx="9" cy="6" r="2"/>
+                <circle cx="15" cy="12" r="2"/>
+                <circle cx="11" cy="18" r="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-threshold">—</div>
+          <div class="kpi-foot" id="kpi-threshold-sub">
+            Authentication similarity boundary
+          </div>
+        </div>
+
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Authentication decision</span>
+            <div class="kpi-icon" id="kpi-decision-icon"
+                style="background:var(--success-soft)">
+              <svg viewBox="0 0 24 24" fill="none"
+                  stroke="var(--success)" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                <path d="m5 12 4 4L19 6"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-decision">—</div>
+          <div class="kpi-foot" id="kpi-decision-sub">
+            Continuous verification
+          </div>
+        </div>
+
+</div>
+
+        <!-- LAYER GRID -->
+        <div class="grid grid-4" style="margin-bottom:16px" id="layer-grid">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- MAIN 2-COL -->
+        <div class="grid grid-main" style="margin-bottom:16px">
+
+          <!-- LEFT: risk score + chart -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Layer 3 — Live risk score</h3>
+                  <div class="card-header-sub">
+                    Siamese BiLSTM V3 · continuous behavioral verification
+                  </div>
+                </div>
+                <span class="badge b-accent" id="agent-live-badge">● Live</span>
+              </div>
+              <div class="card-pad">
+                <div class="gauge-row">
+                  <div class="gauge-svg-wrap">
+                    <svg viewBox="0 0 132 132">
+                      <circle cx="66" cy="66" r="56" fill="none" stroke="var(--border)" stroke-width="10"/>
+                      <circle cx="66" cy="66" r="56" fill="none" stroke="var(--success)" stroke-width="10"
+                              stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"
+                              id="g-arc" style="transition:stroke-dashoffset .6s ease,stroke .3s"/>
+                    </svg>
+                    <div class="gauge-center">
+                      <div class="gauge-pct" id="g-pct">—</div>
+                      <div class="gauge-pct-label">risk</div>
+                    </div>
+                  </div>
+                  <div class="gauge-info">
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Decision</span>
+                      <span class="val" id="g-decision">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Context</span>
+                      <span class="val" id="g-ctx">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Behavioral similarity</span>
+                      <span class="val" id="g-similarity">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Adaptive boundary</span>
+                      <span class="val" id="g-thresh-val">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Behavioral risk</span>
+                      <span class="val" id="g-behavioral-risk">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Cross-layer risk</span>
+                      <span class="val" id="g-alert-risk">—</span>
+                    </div>
+
+                    <div class="gauge-info-row">
+                      <span class="lbl">Context risk</span>
+                      <span class="val" id="g-context-risk">—</span>
+                    </div>
+
+                  </div>
+                </div>
+
+                <div class="tbar-wrap">
+                    <div class="tbar-labels">
+                      <span>Behavioral similarity</span>
+                      <span>Adaptive authentication boundary</span>
+                    </div>
+
+                    <div class="tbar">
+                      <div class="tbar-fill"
+                          id="t-fill"
+                          style="width:0%;background:var(--accent)">
+                      </div>
+
+                      <div class="tbar-mark"
+                          id="t-mark"
+                          style="left:84.72%"
+                          data-label="84.72%">
+                      </div>
+                    </div>
+                  </div>
+
+                <div class="comp-box">
+                  <div class="comp-std" id="comp-std">NIST SP 800-207</div>
+                  <div class="comp-req" id="comp-req">Zero Trust Architecture — continuous verification</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Risk score trend</h3>
+                  <div class="card-header-sub">Last audit-logged scoring events</div>
+                </div>
+              </div>
+              <div class="chart-legend">
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Risk %</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--border-strong)"></span>Threshold ref.</div>
+              </div>
+              <div style="padding:0 18px 18px" id="chart-wrap">
+                <svg viewBox="0 0 560 140" style="width:100%;height:140px" id="trend-svg"></svg>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT: session monitor + agent -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Session activity monitor</h3>
+                <span class="badge b-neutral" id="mon-active-badge">—</span>
+              </div>
+              <div class="card-pad" style="padding-top:6px">
+                <div class="info-row">
+                  <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>Detected context</span>
+                  <span class="val"><span class="badge b-success" id="mon-ctx">normal_browsing</span></span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>Active window</span>
+                  <span class="val" id="mon-win">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>Process</span>
+                  <span class="val" id="mon-proc">—</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Alert override</span>
+                  <span class="val" id="mon-override">No</span>
+                </div>
+                <div class="info-row">
+                  <span class="lbl">Adaptive boundary</span>
+                  <span class="val" id="mon-thresh" style="color:var(--accent)">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Keystroke agent</h3>
+                <span class="badge b-neutral" id="ag-run-badge">—</span>
+              </div>
+              <div class="card-pad" style="padding-top:6px">
+                <div class="info-row"><span class="lbl">Profile built</span><span class="val" id="ag-prof">—</span></div>
+                <div class="info-row"><span class="lbl">Profile updates</span><span class="val" id="ag-upd">—</span></div>
+                <div class="info-row"><span class="lbl">Sessions scored</span><span class="val" id="ag-sc">—</span></div>
+                <div class="info-row"><span class="lbl">Buffer size</span><span class="val" id="ag-buf">—</span></div>
+                <div class="info-row"><span class="lbl">Saved to disk</span><span class="val" id="ag-save">—</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- FEED + AUDIT PREVIEW -->
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3>Live alert feed</h3>
+              <span class="card-header-sub" id="feed-count-ov"></span>
+            </div>
+            <div class="feed" id="feed-overview"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Recent audit events</h3>
+              <a href="#" onclick="switchView('audit');return false" style="font-size:12px;font-weight:600;color:var(--accent);text-decoration:none">View all →</a>
+            </div>
+            <div class="table-wrap">
+              <table class="dt">
+                <thead><tr><th>Time</th><th>Event</th><th>Risk</th><th>Decision</th></tr></thead>
+                <tbody id="audit-preview-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══════════ VIEW: LAYERS ═══════════ -->
+      <div class="view" id="view-layers">
+        <div class="page-header">
+          <div>
+            <h1>Defense layers</h1>
+            <p>Four independent layers sharing a common threat-alert bus. Simulate threats to test cross-layer response.</p>
+          </div>
+        </div>
+        <div class="table-wrap card">
+          <table class="dt">
+            <thead><tr><th>Layer</th><th>Name</th><th>Status</th><th>Threats logged</th><th>Type</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody id="layers-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════════ VIEW: ALERTS ═══════════ -->
+      <div class="view" id="view-alerts">
+        <div class="page-header">
+          <div>
+            <h1>Alert feed</h1>
+            <p>Real-time events across all four layers, plus manual threat simulation for demo purposes.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <select class="select" id="alert-filter" onchange="renderAlertsView()">
+              <option value="all">All layers</option>
+              <option value="1">Network Guardian</option>
+              <option value="2">Ransomware Killer</option>
+              <option value="3">Zero-Trust Auth</option>
+              <option value="4">Content Threat</option>
+            </select>
+            <button class="btn btn-danger-outline" onclick="clearAllAlerts()">Clear all</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="card card-pad">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">Simulate cross-layer threat</div>
+            <div class="grid grid-2" style="gap:8px">
+              <button class="btn btn-secondary btn-sm" onclick="simLayer(1,'port_scan','Suspicious port scan — 192.168.1.105','high')">⚡ Network intrusion</button>
+              <button class="btn btn-secondary btn-sm" onclick="simLayer(2,'file_encryption','Mass file encryption detected','high')">☣ Ransomware</button>
+              <button class="btn btn-secondary btn-sm" onclick="simLayer(4,'deepfake_call','Deepfake in video call','medium')">👁 Deepfake</button>
+              <button class="btn btn-secondary btn-sm" onclick="simLayer(4,'phishing_email','AI phishing email blocked','medium')">📧 Phishing</button>
+            </div>
+          </div>
+          <div class="card card-pad">
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Layer 3 threshold effect</div>
+            <div class="info-row"><span class="lbl">Threshold reduction</span><span class="val" id="td-drop" style="color:var(--danger)">—</span></div>
+            <div class="info-row"><span class="lbl">Score boost</span><span class="val" id="td-boost" style="color:var(--accent)">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Event stream</h3></div>
+          <div class="feed" id="feed-alerts"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ VIEW: AUDIT ═══════════ -->
+      <div class="view" id="view-audit">
+        <div class="page-header">
+          <div>
+            <h1>Audit log</h1>
+            <p>Tamper-evident record of every scoring decision, enrollment, alert, and liveness check.</p>
+          </div>
+          <select class="select" id="audit-filter" onchange="renderAuditTable()">
+            <option value="all">All decisions</option>
+            <option value="allow">Allow only</option>
+            <option value="monitor">Monitor only</option>
+            <option value="reauthenticate">Step-up auth only</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="dt">
+              <thead><tr>
+                <th class="sortable" onclick="sortAudit('timestamp')">Time<svg class="sort-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></th>
+                <th>Event type</th><th>Layer</th><th>User</th><th>Risk</th><th>Decision</th><th>Context</th><th>Details</th>
+              </tr></thead>
+              <tbody id="audit-full-body"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="pg-info" id="audit-pg-info">—</div>
+            <div class="pg-btns">
+              <button class="pg-btn" id="pg-prev" onclick="auditPage(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+              <button class="pg-btn" id="pg-next" onclick="auditPage(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ VIEW: SESSION MONITOR ═══════════ -->
+      <div class="view" id="view-session">
+        <div class="page-header">
+          <div>
+            <h1>Session monitor</h1>
+            <p>Windows process monitor — detects the active application every 3 seconds and classifies session context automatically.</p>
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="card card-pad">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">Current detection</div>
+            <div class="info-row"><span class="lbl">Context</span><span class="val"><span class="badge b-success" id="sm-ctx-2">—</span></span></div>
+            <div class="info-row"><span class="lbl">Window title</span><span class="val" id="sm-win-2">—</span></div>
+            <div class="info-row"><span class="lbl">Process name</span><span class="val" id="sm-proc-2">—</span></div>
+            <div class="info-row"><span class="lbl">Monitor active</span><span class="val" id="sm-active-2">—</span></div>
+            <div class="info-row"><span class="lbl">Alert override</span><span class="val" id="sm-ov-2">—</span></div>
+          </div>
+          <div class="card card-pad">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">
+              Adaptive authentication policy
+            </div>
+
+            <div class="info-row">
+              <span class="lbl">Baseline similarity boundary</span>
+              <span class="val">84.72%</span>
+            </div>
+
+            <div class="info-row">
+              <span class="lbl">Sensitive / financial context</span>
+              <span class="val">Stricter boundary</span>
+            </div>
+
+            <div class="info-row">
+              <span class="lbl">Cross-layer alert</span>
+              <span class="val">Boundary increased</span>
+            </div>
+
+            <div class="info-row">
+              <span class="lbl">Critical action</span>
+              <span class="val">Maximum verification</span>
+            </div>
+          </div>
+        </div>
+        <div class="card card-pad" style="margin-top:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">Compliance framework mapping</div>
+          <p style="font-size:12.5px;color:var(--text-2);line-height:1.6">Each detected context maps to a specific regulatory or security standard requirement. Financial operations trigger PSD2 Strong Customer Authentication; sensitive access aligns with GDPR Article 25 and NIST Zero Trust Architecture; all sessions are continuously verified per NIST SP 800-207.</p>
+        </div>
+      </div>
+
+      <!-- ═══════════ VIEW: SETTINGS ═══════════ -->
+      <div class="view" id="view-settings">
+        <div class="page-header">
+          <div>
+            <h1>Settings</h1>
+            <p>Dashboard preferences and account security actions.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card card-pad">
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px">Preferences</div>
+            <div class="toggle-row">
+              <div class="toggle-info"><b>Auto-refresh dashboard</b><span>Poll platform status every 3 seconds</span></div>
+              <label class="switch"><input type="checkbox" id="toggle-refresh" checked onchange="toggleAutoRefresh(this.checked)"><span class="switch-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><b>Desktop notification sound</b><span>Play a tone when step-up auth fires</span></div>
+              <label class="switch"><input type="checkbox" id="toggle-sound" onchange="soundEnabled=this.checked"><span class="switch-track"></span></label>
+            </div>
+          </div>
+
+          <div class="card card-pad" style="border-color:var(--danger-border)">
+            <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:4px">Danger zone</div>
+            <p style="font-size:12px;color:var(--text-2);margin-bottom:14px">These actions are protected server-side by a 4-digit PIN. The PIN is hashed with SHA-256 and never stored in plain text.</p>
+            <button class="btn btn-danger-outline" onclick="showResetModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Reset behavioral profile
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PIN RESET MODAL ═══════════ -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h2>Reset behavioral profile</h2>
+    <p>Enter your 4-digit PIN to confirm. This deletes the enrolled profile permanently — the agent will re-enroll automatically the next time you type. This action is logged in the audit trail.</p>
+    <label class="form-label" for="pin-input">Security PIN</label>
+    <input type="password" class="pin-input" id="pin-input" maxlength="4" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter')doReset()">
+    <div class="field-err" id="pin-err"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeResetModal()">Cancel</button>
+      <button class="btn btn-danger-outline" onclick="doReset()" style="background:var(--danger);color:#fff;border-color:var(--danger)">Confirm reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let auditData = [];
+let auditPageIdx = 0;
+const AUDIT_PAGE_SIZE = 10;
+let autoRefresh = true;
+let soundEnabled = false;
+let pollTimer = null;
+
+const LAYER_META = {
+  1:{name:'Network Guardian',   desc:'Zero-day intrusion detection', color:'#0891B2', soft:'#ECFEFF', border:'#A5F3FC',
+     icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'},
+  2:{name:'Ransomware Killer',  desc:'Endpoint behavioral protection', color:'#DC2626', soft:'#FEF2F2', border:'#FECACA',
+     icon:'<path d="M12 2a5 5 0 0 0-5 5c0 1.5.5 2.5 1 3.5C6.5 12.5 5 14 5 17a7 7 0 0 0 14 0c0-3-1.5-4.5-3-6.5.5-1 1-2 1-3.5a5 5 0 0 0-5-5z"/>'},
+  3:{name:'Zero-Trust Auth',    desc:'Continuous behavioral biometrics', color:'#4F46E5', soft:'#EEF2FF', border:'#C7D2FE',
+     icon:'<circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>'},
+  4:{name:'Content Threat Det.','desc:':'', desc:'Deepfake & AI phishing detection', color:'#D97706', soft:'#FFFBEB', border:'#FDE68A',
+     icon:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'},
+};
+const THRESH_MAP={};
+const COMP_MAP={
+  financial:        {std:'PSD2 — Article 97',      req:'Strong Customer Authentication required for this session.'},
+  sensitive_access:  {std:'GDPR Art.25 + NIST ZTA', req:'Privacy by design + Zero Trust continuous verification.'},
+  normal_browsing:   {std:'NIST SP 800-207',        req:'Zero Trust Architecture — continuous verification enforced.'},
+  under_attack:      {std:'ISO 27001 — A.16',       req:'Incident response mode — elevated authentication required.'},
+};
+const CTX_BADGE={normal_browsing:'b-success',sensitive_access:'b-warning',financial:'b-info',under_attack:'b-danger'};
+const RISK_COLOR={low:'var(--success)',medium:'var(--warning)',high:'var(--danger)',critical:'var(--danger)'};
+// Matches RiskEngineV3.evaluate() decision field: ALLOW / MONITOR / REAUTHENTICATE
+const DECISION_TXT={allow:'Allow',monitor:'Monitor',reauthenticate:'Step-up auth'};
+const DECISION_BADGE={allow:'b-success',monitor:'b-warning',reauthenticate:'b-danger'};
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+const VIEW_META = {
+  overview:{title:'Overview', sub:'Real-time platform status across all defense layers'},
+  layers:{title:'Defense layers', sub:'Manage and simulate all four NeuraShield layers'},
+  alerts:{title:'Alert feed', sub:'Live threat events and cross-layer simulation'},
+  audit:{title:'Audit log', sub:'Full authentication and decision history'},
+  session:{title:'Session monitor', sub:'Automatic context detection engine'},
+  settings:{title:'Settings', sub:'Preferences and security actions'},
+};
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click',()=>switchView(el.dataset.view));
+});
+function switchView(name){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('topbar-title').textContent = VIEW_META[name].title;
+  document.getElementById('topbar-sub').textContent   = VIEW_META[name].sub;
+  if(name==='audit') renderAuditTable();
+  if(name==='alerts') renderAlertsView();
+  if(name==='layers') renderLayersTable();
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+// Shared-secret API key for this local security console.
+// Must match NEURASHIELD_API_KEY set on the platform.
+// This is a single-operator trust model (a local dev/demo
+// console), not per-user auth — set both sides consistently.
+const NEURASHIELD_API_KEY = 'dev-only-change-me';
+
+async function fetchJ(url){const r=await fetch(url,{headers:{'X-API-Key':NEURASHIELD_API_KEY}});return r.json();}
+async function postJ(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':NEURASHIELD_API_KEY},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){ const err=new Error(j.detail||'Request failed'); err.status=r.status; throw err; }
+  return j;
+}
+// Null-safe DOM helpers. A single missing/renamed element ID
+// must never throw and silently abort the rest of a render
+// function (that's what broke the threshold bar before: one
+// missing #g-ctx killed every DOM write scheduled after it).
+function setTxt(id, val){ const el=document.getElementById(id); if(el) el.textContent = val; else console.warn('[Dashboard] missing element #'+id); }
+function setHtml(id, val){ const el=document.getElementById(id); if(el) el.innerHTML = val; else console.warn('[Dashboard] missing element #'+id); }
+function setStyle(id, prop, val){ const el=document.getElementById(id); if(el) el.style[prop] = val; else console.warn('[Dashboard] missing element #'+id); }
+function setAttr(id, attr, val){ const el=document.getElementById(id); if(el) el.setAttribute(attr, val); else console.warn('[Dashboard] missing element #'+id); }
+function timeAgo(iso){
+  if(!iso) return '—';
+  const d=new Date(iso), diff=(Date.now()-d.getTime())/1000;
+  if(diff<60) return Math.floor(diff)+'s ago';
+  if(diff<3600) return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return d.toLocaleDateString();
+}
+function esc(s){return (s||'').toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+// ════════════════════════════════════════
+// LAYER GRID (Overview)
+// ════════════════════════════════════════
+let _layerStatesCache = {};
+function renderLayerGrid(layerStates){
+  _layerStatesCache = layerStates;
+  const grid = document.getElementById('layer-grid');
+  grid.innerHTML = Object.entries(layerStates).map(([numStr,state])=>{
+    const num = parseInt(numStr);
+    const meta = LAYER_META[num];
+    const isReal = num===3;
+    const statusBadge = state.status==='monitoring' ? 'b-success' :
+                         state.status==='active'     ? 'b-accent'  :
+                         (state.status==='alert'||state.status==='elevated') ? 'b-danger' : 'b-neutral';
+    const statusLabel = (state.status||'—').charAt(0).toUpperCase()+(state.status||'').slice(1);
+    return `<div class="layer-card" style="${(state.status==='alert'||state.status==='elevated')?'border-color:var(--danger-border);background:var(--danger-soft)':''}">
+      <div class="layer-card-top">
+        <div class="layer-icon" style="background:${meta.soft}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.icon}</svg>
+        </div>
+        <span class="badge ${isReal?'b-accent':'b-neutral'}">${isReal?'Live':'Simulated'}</span>
+      </div>
+      <div class="layer-name">${meta.name}</div>
+      <div class="layer-desc">${meta.desc}</div>
+      <div class="layer-stats">
+        <span class="badge ${statusBadge}"><span class="badge-dot-only" style="background:currentColor"></span>${statusLabel}</span>
+        <span class="layer-count"><b>${state.threat_count||0}</b> ${num===3?'step-ups':'threats'}</span>
+      </div>
+      <div class="layer-actions">
+        ${isReal
+          ? `<button class="btn btn-primary btn-sm" style="flex:1" onclick="window.location='/layer3'">Open dashboard</button>`
+          : `<button class="btn btn-secondary btn-sm" style="flex:1" onclick="window.open('/api/layer${num}/status','_blank')">View status</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLayersTable(){
+  const tb = document.getElementById('layers-table-body');
+  tb.innerHTML = Object.entries(_layerStatesCache).map(([numStr,state])=>{
+    const num=parseInt(numStr), meta=LAYER_META[num], isReal=num===3;
+    const statusBadge = state.status==='monitoring' ? 'b-success' :
+                         state.status==='active' ? 'b-accent' :
+                         (state.status==='alert'||state.status==='elevated') ? 'b-danger' : 'b-neutral';
+    return `<tr>
+      <td><div class="layer-icon" style="width:26px;height:26px;background:${meta.soft};display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="2" style="width:13px;height:13px">${meta.icon}</svg></div></td>
+      <td style="font-family:inherit;font-weight:600">${meta.name}</td>
+      <td><span class="badge ${statusBadge}">${(state.status||'—')}</span></td>
+      <td>${state.threat_count||0}</td>
+      <td><span class="badge ${isReal?'b-accent':'b-neutral'}">${isReal?'Live':'Simulated'}</span></td>
+      <td style="text-align:right">
+        ${isReal
+          ? `<button class="btn btn-secondary btn-sm" onclick="window.location='/layer3'">Open</button>`
+          : `<button class="btn btn-secondary btn-sm" onclick="window.open('/api/layer${num}/status','_blank')">Status JSON</button>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// GAUGE + THRESHOLD (Overview)
+// ════════════════════════════════════════
+function updateGauge(
+  overallRisk,
+  level,
+  decision,
+  context,
+  threshold,
+  behavioralSimilarity,
+  behavioralRisk,
+  alertRisk,
+  contextRisk
+){
+
+  const lvlKey = (level || 'LOW').toLowerCase();
+  const decKey = (decision || 'ALLOW').toLowerCase();
+
+  const color =
+    RISK_COLOR[lvlKey] || 'var(--success)';
+
+  // --------------------------------------------------
+  // OVERALL RISK GAUGE
+  // --------------------------------------------------
+
+  const riskPct = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(overallRisk || 0) * 100
+    )
+  );
+
+  const CIRC = 352;
+
+  setStyle('g-arc', 'strokeDashoffset', CIRC - (riskPct / 100) * CIRC);
+  setStyle('g-arc', 'stroke', color);
+  setTxt('g-pct', riskPct.toFixed(1) + '%');
+  setStyle('g-pct', 'color', color);
+
+
+  // --------------------------------------------------
+  // DECISION
+  // --------------------------------------------------
+
+  setHtml(
+    'g-decision',
+    `<span class="badge ${
+      DECISION_BADGE[decKey] || 'b-neutral'
+    }">${
+      DECISION_TXT[decKey] ||
+      decision ||
+      '—'
+    }</span>`
+  );
+
+
+  // --------------------------------------------------
+  // BEHAVIORAL / CONTEXT INFORMATION
+  // --------------------------------------------------
+
+  setTxt('g-ctx', (context || '—').replace(/_/g, ' '));
+
+  setTxt(
+    'g-similarity',
+    behavioralSimilarity != null
+      ? Number(behavioralSimilarity).toFixed(4)
+      : '—'
+  );
+
+  setTxt(
+    'g-thresh-val',
+    threshold != null
+      ? Number(threshold).toFixed(4)
+      : '—'
+  );
+
+  setTxt(
+    'g-behavioral-risk',
+    behavioralRisk != null
+      ? (Number(behavioralRisk) * 100).toFixed(1) + '%'
+      : '—'
+  );
+
+  setTxt(
+    'g-alert-risk',
+    alertRisk != null
+      ? (Number(alertRisk) * 100).toFixed(1) + '%'
+      : '—'
+  );
+
+  setTxt(
+    'g-context-risk',
+    contextRisk != null
+      ? (Number(contextRisk) * 100).toFixed(1) + '%'
+      : '—'
+  );
+
+
+  // --------------------------------------------------
+  // SIMILARITY / THRESHOLD BAR
+  // --------------------------------------------------
+
+  const similarity =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        Number(behavioralSimilarity || 0)
+      )
+    );
+
+  const authThreshold =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        Number(threshold || 0)
+      )
+    );
+
+  setStyle('t-fill', 'width', (similarity * 100) + '%');
+  setStyle('t-fill', 'background', similarity >= authThreshold ? 'var(--success)' : 'var(--danger)');
+  setStyle('t-mark', 'left', (authThreshold * 100) + '%');
+  setAttr('t-mark', 'data-label', (authThreshold * 100).toFixed(2) + '%');
+
+
+  // --------------------------------------------------
+  // COMPLIANCE / CONTEXT
+  // --------------------------------------------------
+
+  const comp =
+    COMP_MAP[context] ||
+    COMP_MAP.normal_browsing;
+
+  setTxt('comp-std', comp.std);
+  setTxt('comp-req', comp.req);
+}
+
+// ════════════════════════════════════════
+// SESSION MONITOR
+// ════════════════════════════════════════
+function updateSessionMonitor(sm){
+  if(!sm) return;
+  const ctx = sm.current_context || 'normal_browsing';
+  const badgeCls = CTX_BADGE[ctx]||'b-success';
+
+  const ctxEl = document.getElementById('mon-ctx');
+  ctxEl.textContent = ctx.replace(/_/g,' ');
+  ctxEl.className = 'badge '+badgeCls;
+
+  document.getElementById('mon-win').textContent = sm.current_window || '—';
+  document.getElementById('mon-proc').textContent = sm.current_process || '—';
+  document.getElementById('mon-override').textContent = sm.alert_override ? 'Yes — threat active' : 'No';
+  document.getElementById('mon-active-badge').textContent = sm.monitoring_active ? 'Active' : 'Stopped';
+  document.getElementById('mon-active-badge').className = 'badge '+(sm.monitoring_active?'b-success':'b-neutral');
+
+  const latest =
+  window.__v3LatestDecision || null;
+
+  if(latest){
+
+    const threshold =
+      Number(
+        latest.adaptive_threshold ??
+        0.847201
+      );
+
+    document.getElementById(
+      'mon-thresh'
+    ).textContent =
+      (threshold * 100).toFixed(2) + '%';
+
+  }
+
+  // Session view duplicates
+  const ctxEl2 = document.getElementById('sm-ctx-2');
+  if(ctxEl2){ ctxEl2.textContent = ctx.replace(/_/g,' '); ctxEl2.className='badge '+badgeCls; }
+  const set = (id,val)=>{const e=document.getElementById(id); if(e) e.textContent=val;};
+  set('sm-win-2', sm.current_window||'—');
+  set('sm-proc-2', sm.current_process||'—');
+  set('sm-active-2', sm.monitoring_active?'✓ Active':'✗ Stopped');
+  set('sm-ov-2', sm.alert_override?'Yes':'No');
+}
+
+// ════════════════════════════════════════
+// AGENT STATUS
+// ════════════════════════════════════════
+function updateAgent(ag){
+  if(!ag) return;
+  document.getElementById('ag-run-badge').textContent = ag.running?'Running':'Stopped';
+  document.getElementById('ag-run-badge').className = 'badge '+(ag.running?'b-success':'b-neutral');
+  document.getElementById('ag-prof').textContent = ag.profile_built?'Yes':'Building…';
+  document.getElementById('ag-upd').textContent  = ag.n_updates ?? '0';
+  document.getElementById('ag-sc').textContent   = ag.n_scored ?? '0';
+  document.getElementById('ag-buf').textContent  = ag.buffer_size ?? '0';
+  document.getElementById('ag-save').textContent = ag.profile_saved?'Yes':'No';
+  document.getElementById('agent-live-badge').textContent = ag.running ? '● Live' : '○ Offline';
+  document.getElementById('agent-live-badge').className = 'badge '+(ag.running?'b-accent':'b-neutral');
+}
+
+// ════════════════════════════════════════
+// TREND CHART — simple SVG line chart
+// ════════════════════════════════════════
+function renderTrendChart(entries){
+  const svg = document.getElementById('trend-svg');
+  const scored = entries.filter(e=>e.risk_percent!=='' && e.risk_percent!=null).slice(0,20).reverse();
+  if(scored.length<2){
+    svg.innerHTML = `<text x="280" y="70" text-anchor="middle" font-size="12" fill="#9CA3AF" font-family="Inter">Not enough data yet — scores will appear here</text>`;
+    return;
+  }
+  const W=560,H=140,PAD=20;
+  const vals = scored.map(e=>parseFloat(e.risk_percent)||0);
+  const maxV = Math.max(100, ...vals);
+  const stepX = (W-PAD*2)/(scored.length-1);
+  const pts = vals.map((v,i)=>[PAD+i*stepX, H-PAD-((v/maxV)*(H-PAD*2))]);
+  const path = pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const areaPath = path + ` L${pts[pts.length-1][0]},${H-PAD} L${pts[0][0]},${H-PAD} Z`;
+
+  let grid='';
+  for(let i=0;i<=3;i++){
+    const y = PAD + i*(H-PAD*2)/3;
+    grid += `<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="#F0F1F3" stroke-width="1"/>`;
+  }
+
+  svg.innerHTML = `
+    ${grid}
+    <path d="${areaPath}" fill="#4F46E5" opacity="0.06"/>
+    <path d="${path}" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#4F46E5"/>`).join('')}
+  `;
+}
+
+// ════════════════════════════════════════
+// ACTIVITY FEEDS
+// ════════════════════════════════════════
+let _recentEventsCache = [];
+function feedItemHtml(ev){
+  const sev = ev.severity||'info';
+  const iconMap = {high:'b-danger',medium:'b-warning',low:'b-success',info:'b-neutral'};
+  const cls = iconMap[sev]||'b-neutral';
+  const colorVar = {high:'var(--danger)',medium:'var(--warning)',low:'var(--success)',info:'var(--text-3)'}[sev];
+  const softVar  = {high:'var(--danger-soft)',medium:'var(--warning-soft)',low:'var(--success-soft)',info:'var(--surface-2)'}[sev];
+  const layerName = (LAYER_META[ev.layer]||{}).name || ('Layer '+ev.layer);
+  return `<div class="feed-item">
+    <div class="feed-dot-wrap" style="background:${softVar}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="${colorVar}" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/></svg>
+    </div>
+    <div class="feed-body">
+      <div class="feed-title">${esc(layerName)}</div>
+      <div class="feed-msg">${esc(ev.message||'')}</div>
+      <div class="feed-time">${timeAgo(ev.timestamp)}</div>
+    </div>
+  </div>`;
+}
+function renderFeeds(events){
+  _recentEventsCache = events;
+  const emptyHtml = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><div class="empty-title">No events yet</div><div class="empty-sub">Alerts will appear here in real time</div></div>`;
+
+  document.getElementById('feed-overview').innerHTML = events.length ? events.slice(0,6).map(feedItemHtml).join('') : emptyHtml;
+  document.getElementById('feed-count-ov').textContent = events.length ? events.length+' total' : '';
+
+  // Notif dropdown
+  document.getElementById('notif-feed').innerHTML = events.length ? events.slice(0,8).map(feedItemHtml).join('') : emptyHtml;
+  const n = events.length;
+  const nb = document.getElementById('notif-count');
+  if(n>0){ nb.style.display='flex'; nb.textContent = n>9?'9+':n; } else { nb.style.display='none'; }
+
+  // Alerts view (filtered)
+  renderAlertsView();
+}
+function renderAlertsView(){
+  const filter = document.getElementById('alert-filter')?.value || 'all';
+  const list = filter==='all' ? _recentEventsCache : _recentEventsCache.filter(e=>String(e.layer)===filter);
+  const el = document.getElementById('feed-alerts');
+  if(!el) return;
+  el.innerHTML = list.length ? list.map(feedItemHtml).join('') :
+    `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><div class="empty-title">No matching events</div><div class="empty-sub">Try a different layer filter</div></div>`;
+}
+
+// ════════════════════════════════════════
+// AUDIT LOG TABLE
+// ════════════════════════════════════════
+function decisionBadge(dec){
+  if(!dec) return '<span class="badge b-neutral">—</span>';
+  const key = String(dec).toLowerCase();
+  return `<span class="badge ${DECISION_BADGE[key]||'b-neutral'}">${DECISION_TXT[key]||dec}</span>`;
+}
+function renderAuditPreview(){
+  const tb = document.getElementById('audit-preview-body');
+  const rows = auditData.slice(0,6);
+  tb.innerHTML = rows.length ? rows.map(e=>`<tr>
+    <td>${e.timestamp?new Date(e.timestamp).toLocaleTimeString('en',{hour12:false}):'—'}</td>
+    <td>${esc(e.event_type||'—')}</td>
+    <td>${e.risk_percent?e.risk_percent+'%':'—'}</td>
+    <td>${decisionBadge(e.decision)}</td>
+  </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:20px">No entries yet</td></tr>`;
+}
+function renderAuditTable(){
+  const filter = document.getElementById('audit-filter')?.value || 'all';
+  const filtered = filter==='all' ? auditData : auditData.filter(e=>String(e.decision||'').toLowerCase()===filter);
+  const start = auditPageIdx * AUDIT_PAGE_SIZE;
+  const page = filtered.slice(start, start+AUDIT_PAGE_SIZE);
+  const tb = document.getElementById('audit-full-body');
+  if(!tb) return;
+
+  tb.innerHTML = page.length ? page.map(e=>`<tr>
+    <td>${e.timestamp?new Date(e.timestamp).toLocaleString('en',{hour12:false}):'—'}</td>
+    <td>${esc(e.event_type||'—')}</td>
+    <td>${esc(e.layer||'—')}</td>
+    <td>${esc(e.user_id||'—')}</td>
+    <td>${e.risk_percent?esc(String(e.risk_percent))+'%':'—'}</td>
+    <td>${decisionBadge(e.decision)}</td>
+    <td>${esc((e.context||'—').replace(/_/g,' '))}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;color:var(--text-2)">${esc(e.details||e.active_alerts||'—')}</td>
+  </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:24px">No audit entries match this filter</td></tr>`;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length/AUDIT_PAGE_SIZE));
+  document.getElementById('audit-pg-info').textContent =
+    filtered.length ? `Showing ${start+1}–${Math.min(start+AUDIT_PAGE_SIZE,filtered.length)} of ${filtered.length}` : 'No entries';
+  document.getElementById('pg-prev').disabled = auditPageIdx<=0;
+  document.getElementById('pg-next').disabled = auditPageIdx>=totalPages-1;
+}
+function auditPage(dir){
+  auditPageIdx = Math.max(0, auditPageIdx+dir);
+  renderAuditTable();
+}
+function sortAudit(){
+  auditData.reverse();
+  renderAuditTable();
+}
+
+// Global search — filters audit table live
+document.getElementById('global-search').addEventListener('input', (e)=>{
+  const q = e.target.value.toLowerCase().trim();
+  if(!q){ renderAuditTable(); return; }
+  const filtered = auditData.filter(row =>
+    Object.values(row).some(v => String(v).toLowerCase().includes(q))
+  );
+  const tb = document.getElementById('audit-full-body');
+  if(document.getElementById('view-audit').classList.contains('active') && tb){
+    tb.innerHTML = filtered.slice(0,AUDIT_PAGE_SIZE).map(r=>`<tr>
+      <td>${r.timestamp?new Date(r.timestamp).toLocaleString('en',{hour12:false}):'—'}</td>
+      <td>${esc(r.event_type||'—')}</td><td>${esc(r.layer||'—')}</td><td>${esc(r.user_id||'—')}</td>
+      <td>${r.risk_percent?esc(String(r.risk_percent))+'%':'—'}</td><td>${decisionBadge(r.decision)}</td>
+      <td>${esc((r.context||'—').replace(/_/g,' '))}</td>
+      <td style="color:var(--text-2)">${esc(r.details||'—')}</td>
+    </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:24px">No matches for "${esc(q)}"</td></tr>`;
+  }
+});
+
+// ════════════════════════════════════════
+// SIMULATE THREATS
+// ════════════════════════════════════════
+async function simLayer(num,etype,msg,severity){
+  try{
+    const ep={1:'/api/layer1/threat',2:'/api/layer2/threat',4:'/api/layer4/threat'}[num];
+    await postJ(ep,{event_type:etype,severity,message:msg,details:msg});
+    const reductions={network_guardian:0.10,ransomware_killer:0.15,content_threat_detection:0.08};
+    const boosts    ={network_guardian:0.10,ransomware_killer:0.15,content_threat_detection:0.08};
+    const src={1:'network_guardian',2:'ransomware_killer',4:'content_threat_detection'}[num];
+    const dropEl = document.getElementById('td-drop');
+    const boostEl = document.getElementById('td-boost');
+    if(dropEl) dropEl.textContent  = '-'+(reductions[src]||0.08).toFixed(2);
+    if(boostEl) boostEl.textContent = '+'+(boosts[src]||0.08).toFixed(2);
+    await pollStatus();
+    await pollAudit();
+  }catch(e){console.error('Sim error:',e);}
+}
+async function clearAllAlerts(){
+  await fetch('/api/platform/alerts',{method:'DELETE',headers:{'X-API-Key':NEURASHIELD_API_KEY}});
+  const dropEl = document.getElementById('td-drop'), boostEl = document.getElementById('td-boost');
+  if(dropEl) dropEl.textContent='—'; if(boostEl) boostEl.textContent='—';
+  await pollStatus();
+}
+
+// ════════════════════════════════════════
+// PIN RESET (server-verified)
+// ════════════════════════════════════════
+function showResetModal(){
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('reset-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('pin-input').focus(),80);
+}
+function closeResetModal(){ document.getElementById('reset-modal').classList.remove('show'); }
+
+async function doReset(){
+  const pin = document.getElementById('pin-input').value.trim();
+  const errEl = document.getElementById('pin-err');
+  if(!/^\d{4}$/.test(pin)){ errEl.textContent='Enter exactly 4 digits'; return; }
+  try{
+    await postJ('/api/reset-profile', {user_id:9001, pin});
+    closeResetModal();
+    await pollStatus();
+    alert('Profile reset. The agent will re-enroll automatically from your next typing session.');
+  }catch(e){
+    errEl.textContent = e.status===403 ? 'Incorrect PIN' : (e.message||'Reset failed');
+  }
+}
+document.getElementById('reset-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeResetModal(); });
+
+// ════════════════════════════════════════
+// DROPDOWNS
+// ════════════════════════════════════════
+function setupDropdown(btnId, panelId){
+  const btn = document.getElementById(btnId), panel = document.getElementById(panelId);
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.dropdown-panel').forEach(p=>{ if(p!==panel) p.classList.remove('show'); });
+    panel.classList.toggle('show');
+  });
+}
+setupDropdown('notif-btn','notif-panel');
+setupDropdown('avatar-btn','avatar-panel');
+document.addEventListener('click', ()=>document.querySelectorAll('.dropdown-panel').forEach(p=>p.classList.remove('show')));
+
+// ════════════════════════════════════════
+// SETTINGS TOGGLES
+// ════════════════════════════════════════
+function toggleAutoRefresh(on){
+  autoRefresh = on;
+  if(on){ startPolling(); } else if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+}
+
+// ════════════════════════════════════════
+// MAIN POLL
+// ════════════════════════════════════════
+async function pollStatus(){
+
+  try{
+
+    const d =
+      await fetchJ('/api/platform/status');
+
+
+    // ==================================================
+    // PLATFORM THREAT LEVEL
+    // ==================================================
+
+    const tl =
+      (d.platform_threat_level || 'low')
+      .toLowerCase();
+
+    const tlColors = {
+      low: 'var(--success)',
+      medium: 'var(--warning)',
+      high: 'var(--danger)',
+      critical: 'var(--danger)'
+    };
+
+    const tlSoft = {
+      low: 'var(--success-soft)',
+      medium: 'var(--warning-soft)',
+      high: 'var(--danger-soft)',
+      critical: 'var(--danger-soft)'
+    };
+
+
+    // ==================================================
+    // ACTIVE ALERTS
+    // ==================================================
+
+    const n =
+      d.n_active_alerts || 0;
+
+    const alertKpi = document.getElementById('kpi-alerts');
+      if(alertKpi){
+        alertKpi.textContent = n;
+      }
+
+    const navBadge =
+      document.getElementById(
+        'nav-alert-badge'
+      );
+
+    if(navBadge){
+
+      navBadge.textContent =
+        n > 99 ? '99+' : n;
+
+      navBadge.classList.toggle(
+        'show',
+        n > 0
+      );
+    }
+
+
+    // ==================================================
+    // LAYER GRID
+    // ==================================================
+
+    renderLayerGrid(
+      d.layer_states || {}
+    );
+
+    if(
+      document
+        .getElementById('view-layers')
+        .classList
+        .contains('active')
+    ){
+      renderLayersTable();
+    }
+
+
+    // ==================================================
+    // SESSION MONITOR
+    // ==================================================
+
+    updateSessionMonitor(
+      d.session_monitor
+    );
+
+
+    // ==================================================
+    // AGENT STATUS
+    // ==================================================
+
+    updateAgent(
+      d.agent_status
+    );
+
+
+    // ==================================================
+    // V3 BEHAVIORAL DECISION
+    // ==================================================
+
+    const ag =
+      d.latest_agent_score || {};
+
+      window.__v3LatestDecision = ag;
+
+    if(
+      ag.status === 'inference_complete' ||
+      ag.risk_decision
+    ){
+
+      const overallRisk =
+        Number(
+          ag.overall_risk ?? 0
+        );
+
+      const similarity =
+        Number(
+          ag.behavioral_similarity ??
+          ag.similarity ??
+          0
+        );
+
+      const threshold =
+        Number(
+          ag.adaptive_threshold ??
+          0.847201
+        );
+
+      const behavioralRisk =
+        Number(
+          ag.behavioral_risk ??
+          (1 - similarity)
+        );
+
+      const alertRisk =
+        Number(
+          ag.alert_risk ??
+          0
+        );
+
+      const contextRisk =
+        Number(
+          ag.context_risk ??
+          0
+        );
+
+      const decision =
+        ag.risk_decision ??
+        ag.decision ??
+        'ALLOW';
+
+      const level =
+        ag.risk_level ??
+        'LOW';
+
+      const context =
+        ag.context ??
+        'normal_browsing';
+
+
+      // ----------------------------------------------
+      // MAIN GAUGE
+      // ----------------------------------------------
+
+      updateGauge(
+        overallRisk,
+        level,
+        decision,
+        context,
+        threshold,
+        similarity,
+        behavioralRisk,
+        alertRisk,
+        contextRisk
+      );
+
+
+      // ----------------------------------------------
+      // KPI — CURRENT RISK
+      // ----------------------------------------------
+
+      const riskPercent =
+        overallRisk * 100;
+
+      const riskColor =
+        RISK_COLOR[
+          String(level).toLowerCase()
+        ] || 'var(--success)';
+
+      const riskEl =
+        document.getElementById(
+          'kpi-risk'
+        );
+
+      if(riskEl){
+
+        riskEl.textContent =
+          riskPercent.toFixed(1) + '%';
+
+        riskEl.style.color =
+          riskColor;
+      }
+
+      const riskSub =
+        document.getElementById(
+          'kpi-risk-sub'
+        );
+
+      if(riskSub){
+
+        riskSub.textContent =
+          String(level).toUpperCase() +
+          ' risk · ' +
+          context.replace(/_/g,' ');
+      }
+
+
+      // ----------------------------------------------
+      // KPI — SIMILARITY
+      // ----------------------------------------------
+
+      const simEl =
+        document.getElementById(
+          'kpi-similarity'
+        );
+
+      if(simEl){
+
+        simEl.textContent =
+          similarity.toFixed(4);
+
+        simEl.style.color =
+          similarity >= threshold
+            ? 'var(--success)'
+            : 'var(--danger)';
+      }
+
+
+      // ----------------------------------------------
+      // KPI — ADAPTIVE BOUNDARY
+      // ----------------------------------------------
+
+      const thresholdEl =
+        document.getElementById(
+          'kpi-threshold'
+        );
+
+      if(thresholdEl){
+
+        thresholdEl.textContent =
+          (threshold * 100).toFixed(2) +
+          '%';
+
+        thresholdEl.style.color =
+          'var(--accent)';
+      }
+
+      const thresholdSub =
+        document.getElementById(
+          'kpi-threshold-sub'
+        );
+
+      if(thresholdSub){
+
+        thresholdSub.textContent =
+          'Context-adaptive similarity boundary';
+      }
+
+
+      // ----------------------------------------------
+      // KPI — DECISION
+      // ----------------------------------------------
+
+      const decisionEl =
+        document.getElementById(
+          'kpi-decision'
+        );
+
+      if(decisionEl){
+
+        const normalized =
+          String(decision)
+          .replace(/_/g,' ');
+
+        decisionEl.textContent =
+          normalized;
+
+        decisionEl.style.fontSize =
+          '18px';
+
+        decisionEl.style.color =
+          decision === 'ALLOW'
+            ? 'var(--success)'
+            : decision === 'MONITOR'
+              ? 'var(--warning)'
+              : 'var(--danger)';
+      }
+
+      const decisionSub =
+        document.getElementById(
+          'kpi-decision-sub'
+        );
+
+      if(decisionSub){
+
+        if(decision === 'REAUTHENTICATE'){
+
+          decisionSub.textContent =
+            'Step-up authentication required';
+
+        }else if(decision === 'MONITOR'){
+
+          decisionSub.textContent =
+            'Continuous monitoring intensified';
+
+        }else{
+
+          decisionSub.textContent =
+            'Continuous verification passed';
+        }
+      }
+
+
+      // ----------------------------------------------
+      // LOG TO CONSOLE FOR DEBUGGING
+      // ----------------------------------------------
+
+      console.debug(
+        '[Dashboard] V3 decision:',
+        {
+          similarity,
+          threshold,
+          overallRisk,
+          behavioralRisk,
+          alertRisk,
+          contextRisk,
+          decision,
+          level,
+          context
+        }
+      );
+    }
+
+
+    // ==================================================
+    // RECENT EVENTS
+    // ==================================================
+
+    if(d.recent_events){
+
+      renderFeeds(
+        d.recent_events
+      );
+    }
+
+
+    // ==================================================
+    // ONLINE STATUS
+    // ==================================================
+
+    document.getElementById(
+      'sys-dot'
+    ).style.background =
+      'var(--success)';
+
+    document.getElementById(
+      'sys-text'
+    ).textContent =
+      'System online';
+
+
+  }catch(e){
+
+    document.getElementById(
+      'sys-dot'
+    ).style.background =
+      'var(--danger)';
+
+    document.getElementById(
+      'sys-text'
+    ).textContent =
+      'Connection lost';
+
+    console.error(
+      'V3 status poll error:',
+      e
+    );
+  }
+}
+
+async function pollAudit(){
+  try{
+    const d = await fetchJ('/api/platform/audit-log?limit=100');
+    auditData = d.entries || [];
+    renderAuditPreview();
+    if(document.getElementById('view-audit').classList.contains('active')) renderAuditTable();
+    renderTrendChart(auditData);
+  }catch(e){}
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollStatus(); pollAudit();
+  pollTimer = setInterval(()=>{ if(autoRefresh){ pollStatus(); } }, 3000);
+  setInterval(()=>{ if(autoRefresh) pollAudit(); }, 6000);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+startPolling();
+</script>
+</body>
+</html>

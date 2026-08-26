@@ -1,0 +1,37 @@
+                 ┌── Sequence A (50 × 16)
+                 │
+                 ▼
+             BiLSTM Encoder
+                 │
+                 ▼
+          Behavioral Embedding
+                 │
+                 ├──────────────┐
+                 │              │
+                 │              ▼
+                 │          Distance
+                 │              │
+                 │              ▼
+                 │        Similarity Score
+                 │
+                 │
+                 └── Sequence B (50 × 16)
+                         │
+                         ▼
+                     SAME
+                  BiLSTM Encoder
+
+
+
+genuine pair 
+        same participant
+            Sequence A ───┐
+                        ├──→ high similarity
+            Sequence B ───┘
+
+imposter pair
+        participant A
+            Sequence A ───┐
+                        ├──→ low similarity
+            Sequence B ───┘
+        participant B

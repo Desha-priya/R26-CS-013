@@ -1,0 +1,17 @@
+{
+    "files_processed": 158375,
+    "valid_files": 158375,
+    "global_key_id_decrease_total": 1765871,
+    "within_section_key_id_decrease_total": 1765821,
+    "press_time_decrease_total": 0,
+    "release_time_decrease_total": 1562048,
+    "participants_with_within_section_key_problem": 158375,
+    "participants_with_press_time_problem": 0,
+    "participants_with_release_time_problem": 156804,
+    "participants_clean_within_section": 0,
+    "global_only_temporal_problem_participants": 0,
+    "within_section_problem_participants": 158375,
+    "press_time_problem_participants": 0,
+    "fully_temporally_clean_participants": 0,
+    "elapsed_seconds": 4430.052168607712
+}

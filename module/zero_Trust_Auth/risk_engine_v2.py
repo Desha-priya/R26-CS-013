@@ -68,8 +68,17 @@ class RiskEngine:
         self.active_alerts        = {}
         self.alert_expiry_seconds = 600   # 10 min — long enough for demo
         self.score_history        = {}
+        
+        self.last_liveness_success = None   # timestamp of last successful liveness
+        self.liveness_grace_seconds = 60    # 60 seconds grace period after successful verification
 
         self.logger.info(f"Risk Engine ready. {len(self.user_profiles)} user profiles loaded.")
+
+        self.per_user_models = getattr(RiskEngine, 'per_user_models', {})
+        if self.per_user_models:
+            print(f"[RiskEngine] Loaded {len(self.per_user_models)} per-user models")
+
+
 
     def is_sensitive_action(self, context: str = "normal_browsing") -> bool:
         if not context or context == "normal_browsing":
@@ -180,89 +189,91 @@ class RiskEngine:
 
     # -*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--
     def _score_live_user(self, live_features: list, user_id: int,
-                         context: str, use_window: bool) -> dict:
+                     context: str, use_window: bool) -> dict:
         """
-        Score a live enrolled user (id >= 9000).
-        Uses personal deviation only — compares current typing
-        to their OWN enrolled profile. No IF/SVM (wrong scale).
+        Score a live enrolled user (user_id >= 9000).
+        This is the main function used when you are typing in real time.
+        """
 
-        Deviation score interpretation:
-          0.0 - 0.2 = typing just like enrolled session → low risk
-          0.2 - 0.5 = some difference → medium risk
-          0.5 - 1.0 = very different → high risk (different person?)
-        """
+        # -------------------------------------------------
+        # 1. Check if the user has an enrolled profile
+        # -------------------------------------------------
         if user_id not in self.user_profiles:
-            # No enrolled profile — return medium risk by default
+            # No profile found → return medium risk
             return self._empty_live_result(user_id, context, 0.4)
 
         enrolled_raw = self.user_profiles[user_id].get('raw_features', [])
         if not enrolled_raw:
             return self._empty_live_result(user_id, context, 0.4)
 
-        # Compare raw keystroke features (first 15) directly
-        # Using raw values avoids scaler distortion for live browser data
-        live    = np.array(live_features[:15],    dtype=float)
-        enr     = np.array(enrolled_raw[:15],     dtype=float)
-        min_len = min(len(live), len(enr))
+        # -------------------------------------------------
+        # 2. Compare current typing with enrolled profile
+        # -------------------------------------------------
+        # We only use the first 15 features (keystroke features)
+        live = np.array(live_features[:15], dtype=float)
+        enr  = np.array(enrolled_raw[:15], dtype=float)
 
+        min_len = min(len(live), len(enr))
         if min_len < 3:
             return self._empty_live_result(user_id, context, 0.3)
 
         live = live[:min_len]
         enr  = enr[:min_len]
 
-        # Normalise each feature relative to enrolled value
-        # This makes comparison scale-independent
-        # Avoid division by zero for zero-valued features
+        # Avoid division by zero
         safe_enr = np.where(np.abs(enr) < 0.001, 0.001, enr)
+
+        # Calculate how different current typing is from the enrolled profile
         relative_diff = np.abs((live - enr) / safe_enr)
+        relative_diff = np.clip(relative_diff, 0.0, 3.0)   # limit extreme values
 
-        # Cap outliers — single extreme feature shouldn't dominate
-        relative_diff = np.clip(relative_diff, 0.0, 3.0)
-
-        # Mean relative difference across all features
-        # 0.0 = identical, 1.0 = 100% different on average, 3.0 = extreme
         mean_diff = float(np.mean(relative_diff))
-
-        # Convert to 0-1 risk score
-        # 0.0 diff → 0.0 risk, 0.5 diff → 0.5 risk, 1.0+ diff → 1.0 risk
         personal_deviation = float(np.clip(mean_diff / 1.5, 0.0, 1.0))
+        # personal_deviation = 0.0 → typing is same as enrolled
+        # personal_deviation = 1.0 → typing is very different
 
-                # Use per-user model if available (separate digraph model later)
-        per_user_score = None
-        if hasattr(self, 'per_user_models') and user_id in self.per_user_models:
-            # TODO: call per-user model score here in future
-            pass
+        # -------------------------------------------------
+        # 3. Blend with per-user Isolation Forest model (if available)
+        # -------------------------------------------------
+        per_user_score = self.get_per_user_score(user_id, live_features)
+        if per_user_score is not None:
+            # 65% real-time deviation + 35% personal model
+            personal_deviation = 0.65 * personal_deviation + 0.35 * per_user_score
 
-        # Alert + sensitive action boost
+        # -------------------------------------------------
+        # 4. Apply Alert Boost (from other layers)
+        # -------------------------------------------------
+        # This is the important part for simulated phishing / ransomware
         active_now  = self._get_active_alerts()
         alert_boost = sum(self.ALERT_SCORE_BOOST.get(src, 0.0) for src in active_now)
 
         instant_score = float(np.clip(personal_deviation + alert_boost, 0.0, 1.0))
 
-        if self.is_sensitive_action(context):
-            instant_score = min(1.0, instant_score * 1.65)
+        # -------------------------------------------------
+        # 5. Extra boost if context is sensitive
+        # -------------------------------------------------
+        if self.is_sensitive_action(context) or context in ['financial', 'sensitive_access', 'under_attack']:
+            instant_score = min(1.0, instant_score * 1.55)
 
-        # Alert boost still applies to live users
-        active_now  = self._get_active_alerts()
-        alert_boost = sum(self.ALERT_SCORE_BOOST.get(src, 0.0) for src in active_now)
-
-        instant_score = float(np.clip(personal_deviation + alert_boost, 0.0, 1.0))
-
-        # Sliding window for live sessions — smooths out typing bursts
+        # -------------------------------------------------
+        # 6. Sliding window (smooth the score)
+        # -------------------------------------------------
         if use_window:
             if user_id not in self.score_history:
                 self.score_history[user_id] = deque(maxlen=5)
+
             history = self.score_history[user_id]
-            prev    = history[-1] if len(history) > 0 else instant_score
-            # Decay previous score slowly, keep spikes
+            prev = history[-1] if len(history) > 0 else instant_score
+
+            # Keep the higher value between current score and previous score
             final_score = max(instant_score, prev * 0.75)
-            # Small baseline floor — gauge never shows 0%
+
+            # Small baseline so the gauge never shows 0%
             baseline = {
                 'normal_browsing':  0.02,
-                'sensitive_access': 0.04,
-                'financial':        0.05,
-                'under_attack':     0.07,  # NOT 0.7 — was a typo
+                'sensitive_access': 0.05,
+                'financial':        0.06,
+                'under_attack':     0.12,
             }
             final_score = max(final_score, baseline.get(context, 0.02))
             history.append(final_score)
@@ -270,30 +281,49 @@ class RiskEngine:
             final_score = instant_score
 
         final_score = float(np.clip(final_score, 0.0, 1.0))
-        threshold   = self._get_adaptive_threshold(context)
-        decision    = self._make_decision(final_score, threshold)
+
+        # -------------------------------------------------
+        # 7. Liveness Grace Period (prevent spam)
+        # -------------------------------------------------
+        liveness_grace_active = False
+        seconds_since_liveness = None
+
+        if self.last_liveness_success is not None:
+            seconds_since_liveness = (datetime.now() - self.last_liveness_success).total_seconds()
+            if seconds_since_liveness < self.liveness_grace_seconds:
+                liveness_grace_active = True
+                # Strongly reduce risk during grace period
+                final_score = max(0.0, final_score * 0.25)
+
+        # -------------------------------------------------
+        # 8. Final Decision
+        # -------------------------------------------------
+        threshold = self._get_adaptive_threshold(context)
+        decision  = self._make_decision(final_score, threshold)
 
         return {
-            'user_id':            user_id,
-            'timestamp':          datetime.now().isoformat(),
-            'context':            context,
-            'if_raw':             None,
-            'if_score':           None,
-            'svm_raw':            None,
-            'svm_score':          None,
-            'svm_used':           False,
-            'combined_score':     None,
-            'personal_deviation': round(personal_deviation, 4),
-            'alert_boost':        round(alert_boost, 4),
-            'instant_score':      round(instant_score, 4),
-            'final_risk_score':   round(final_score, 4),
-            'adaptive_threshold': round(threshold, 4),
-            'active_alerts':      list(active_now.keys()),
-            'decision':           decision,
-            'risk_level':         self._risk_level(final_score),
-            'risk_percent':       int(final_score * 100),
-            'window_size':        len(self.score_history.get(user_id, [])),
-            'mode':               'live',
+            'user_id':                 user_id,
+            'timestamp':               datetime.now().isoformat(),
+            'context':                 context,
+            'if_raw':                  None,
+            'if_score':                None,
+            'svm_raw':                 None,
+            'svm_score':               None,
+            'svm_used':                False,
+            'combined_score':          None,
+            'personal_deviation':      round(personal_deviation, 4),
+            'alert_boost':             round(alert_boost, 4),
+            'instant_score':           round(instant_score, 4),
+            'final_risk_score':        round(final_score, 4),
+            'adaptive_threshold':      round(threshold, 4),
+            'active_alerts':           list(active_now.keys()),
+            'decision':                decision,
+            'risk_level':              self._risk_level(final_score),
+            'risk_percent':            int(final_score * 100),
+            'window_size':             len(self.score_history.get(user_id, [])),
+            'mode':                    'live',
+            'liveness_grace_active':   liveness_grace_active,
+            'seconds_since_liveness':  int(seconds_since_liveness) if seconds_since_liveness is not None else None,
         }
 
     def _empty_live_result(self, user_id, context, score):
@@ -390,6 +420,23 @@ class RiskEngine:
         if score < 0.35:   return 'low'
         elif score < 0.60: return 'medium'
         else:              return 'high'
+    
+    def get_per_user_score(self, user_id: int, features: list) -> float | None:
+        """Get score from per-user Isolation Forest if available."""
+      
+        if user_id not in self.per_user_models:   # per_user_models should be accessible from platform
+            return None
+        try:
+            m = self.per_user_models[user_id]
+            feats = np.array(features[:13]).reshape(1, -1)   # adjust length as needed
+            scaled = m['scaler'].transform(feats)
+            raw_sc = float(m['model'].score_samples(scaled)[0])
+            stats = m.get('stats', {})
+            mn = stats.get('min', -0.7)
+            mx = stats.get('max', -0.3)
+            return float(np.clip((mx - raw_sc) / (mx - mn + 1e-6), 0.0, 1.0))
+        except Exception:
+            return None
 
 
 # -*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--
