@@ -1,0 +1,70 @@
+Processed 162,021/162,021 | eligible=3,450 | rate=49.8 files/sec
+
+==============================================================================
+WARNING
+==============================================================================
+Only 3,450 participants passed strict quality screening.
+Required: 5,000
+
+No artificial participants will be added.
+
+==============================================================================
+DEEP QUALITY SCREENING V2 COMPLETE
+==============================================================================
+Candidates processed      : 162,021
+Eligible participants     : 3,450
+Target participants       : 5,000
+Final Top-5000 selected   : 3,450
+Processing time           : 54.24 minutes
+
+==============================================================================
+FINAL COHORT QUALITY
+==============================================================================
+Mean quality score       : 0.9997
+Median quality score     : 1.0000
+Minimum quality score    : 0.9925
+Mean keystrokes          : 734.9
+Median keystrokes        : 726.0
+Minimum keystrokes       : 600
+Mean sections            : 15.0
+Median sections          : 15.0
+Minimum sections         : 15
+Mean finite ratio        : 0.9678
+Minimum finite ratio     : 0.9609
+
+==============================================================================
+OUTPUT FILES
+==============================================================================
+Full report              : reports\deep_quality_v2\full_deep_quality_report_v2.csv
+Eligible ranked          : reports\deep_quality_v2\eligible_participants_ranked_v2.csv
+Final Top 5000           : reports\deep_quality_v2\final_top_5000_participants_v2.csv
+Quality distribution     : reports\deep_quality_v2\quality_score_distribution_v2.csv
+Failure distribution     : reports\deep_quality_v2\failure_reason_distribution_v2.csv
+Summary                  : reports\deep_quality_v2\deep_quality_summary_v2.json
+
+==============================================================================
+RESEARCH CONTROLS
+==============================================================================
+Model performance used   : NO
+Validation metrics used  : NO
+Test metrics used        : NO
+Participant-level        : YES
+Existing features changed: NO
+Selection based on       : DATA QUALITY ONLY
+
+==============================================================================
+SCREENING COMPLETE
+==============================================================================
+
+***
+cannot use 5,000 under the current strict criteria
+
+You processed 162,021 candidate feature files, but only 3,450 participants satisfy all of these simultaneously:
+
+≥ 600 keystrokes
+≥ 15 sections
+≥ 90% finite feature values
+acceptable feature variability
+valid temporal ordering
+
+And the 3,450 that passed are very high quality:
