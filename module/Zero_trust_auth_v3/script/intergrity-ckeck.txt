@@ -1,0 +1,72 @@
+===========================================================================
+FINAL PARTICIPANT + SEQUENCE INTEGRITY AUDIT
+===========================================================================
+
+TRAIN
+---------------------------------------------------------------------------
+Sequences           : 29,127
+Unique participants : 3,500
+Min sequences/user  : 2
+Max sequences/user  : 25
+Mean sequences/user : 8.32
+Median sequences/user: 8.00
+X shape             : (29127, 50, 16)
+
+VALIDATION
+---------------------------------------------------------------------------
+Sequences           : 6,486
+Unique participants : 750
+Min sequences/user  : 2
+Max sequences/user  : 21
+Mean sequences/user : 8.65
+Median sequences/user: 8.00
+X shape             : (6486, 50, 16)
+
+TEST
+---------------------------------------------------------------------------
+Sequences           : 6,271
+Unique participants : 750
+Min sequences/user  : 2
+Max sequences/user  : 19
+Mean sequences/user : 8.36
+Median sequences/user: 8.00
+X shape             : (6271, 50, 16)
+
+===========================================================================
+CROSS-SPLIT PARTICIPANT LEAKAGE
+===========================================================================
+Train ∩ Validation : 0
+Train ∩ Test       : 0
+Validation ∩ Test  : 0
+
+===========================================================================
+EXPECTED PARTICIPANT COUNTS
+===========================================================================
+Train expected      : 3500
+Validation expected : 750
+Test expected       : 750
+
+Train actual        : 3500
+Validation actual   : 750
+Test actual         : 750
+
+===========================================================================
+✓ DATASET INTEGRITY CHECK PASSED
+===========================================================================
+
+
+| Check                   |      Result |
+| ----------------------- | ----------: |
+| Train participants      |   **3,500** |
+| Validation participants |     **750** |
+| Test participants       |     **750** |
+| Total                   |   **5,000** |
+| Participant leakage     |     **0**  |
+| Train sequences         |  **29,127** |
+| Validation sequences    |   **6,486** |
+| Test sequences          |   **6,271** |
+| Input dimensions        | **50 × 16** |
+| NaN / Inf               |     **0**  |
+| Median sequences/user   |       **8** |
+| Maximum sequences/user  |          25 |
+| Minimum sequences/user  |           2 |
