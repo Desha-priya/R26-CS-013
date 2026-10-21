@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuraShield — Layer 4 · Content Threat Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F9FAFB; --surface:#FFFFFF; --surface-2:#FAFAFB;
+  --border:#E5E7EB; --border-strong:#D1D5DB;
+  --text:#111827; --text-2:#4B5563; --text-3:#9CA3AF;
+  --accent:#4F46E5; --accent-hover:#4338CA; --accent-soft:#EEF2FF; --accent-border:#C7D2FE;
+  --success:#059669; --success-soft:#ECFDF5; --success-border:#A7F3D0;
+  --warning:#D97706; --warning-soft:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626; --danger-soft:#FEF2F2; --danger-border:#FECACA;
+  --info:#2563EB; --info-soft:#EFF6FF; --info-border:#BFDBFE;
+  --radius:10px; --radius-sm:6px;
+  --shadow-xs:0 1px 2px rgba(16,24,40,.04);
+  --shadow-sm:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button,input,textarea,select{font-family:inherit}
+::selection{background:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ═══ LAYOUT ═══ */
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.side-logo{display:flex;align-items:center;gap:9px;padding:18px 20px;border-bottom:1px solid var(--border)}
+.side-logo-mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.side-logo-mark svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.side-logo-text{font-weight:700;font-size:14.5px;letter-spacing:-.01em;color:var(--text)}
+.side-logo-sub{font-size:10.5px;color:var(--text-3);margin-top:-1px}
+
+.side-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-section{margin-bottom:18px}
+.nav-label{font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:0 10px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;transition:background .12s,color .12s;margin-bottom:1px}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav-item:hover{background:var(--surface-2);color:var(--text)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-item .nav-badge{margin-left:auto;font-size:10.5px;font-weight:600;background:var(--danger);color:#fff;border-radius:99px;padding:1px 6px;min-width:16px;text-align:center;display:none}
+.nav-item .nav-badge.show{display:inline-block}
+
+.side-foot{padding:12px 16px;border-top:1px solid var(--border)}
+.side-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2)}
+.status-dot-sm{width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0}
+.status-dot-sm.off{background:var(--text-3)}
+.side-version{font-size:10.5px;color:var(--text-3);margin-top:3px;font-family:var(--mono)}
+
+/* ═══ MAIN ═══ */
+.main{display:flex;flex-direction:column;min-width:0}
+
+/* ═══ TOPBAR ═══ */
+.topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:20}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-3)}
+.crumbs a{color:var(--text-2);text-decoration:none;font-weight:500}
+.crumbs a:hover{color:var(--accent)}
+.crumbs .sep{color:var(--text-3)}
+.page-title-wrap{display:flex;flex-direction:column;justify-content:center}
+.page-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.page-sub{font-size:11.5px;color:var(--text-3);margin-top:-1px}
+
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);font-family:var(--mono)}
+.chip .status-dot-sm{width:6px;height:6px}
+.icon-btn{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,border-color .12s}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.icon-btn svg{width:16px;height:16px;stroke:var(--text-2);fill:none;stroke-width:2}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;padding:24px 28px 40px;max-width:1440px;width:100%}
+.view{display:none}
+.view.active{display:block}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.page-header h1{font-size:20px;font-weight:700;letter-spacing:-.015em;color:var(--text)}
+.page-header p{font-size:13px;color:var(--text-2);margin-top:3px}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-secondary{background:var(--surface);border-color:var(--border-strong);color:var(--text)}
+.btn-secondary:hover:not(:disabled){background:var(--surface-2)}
+.btn-sm{padding:6px 10px;font-size:12px}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-xs)}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-head h3{font-size:13.5px;font-weight:600;color:var(--text)}
+.card-head .card-sub{font-size:11.5px;color:var(--text-3);margin-top:1px}
+.card-body{padding:18px}
+
+/* ═══ KPI ═══ */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{padding:16px 18px}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpi-label{font-size:12px;font-weight:500;color:var(--text-2)}
+.kpi-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-icon svg{width:15px;height:15px;fill:none;stroke-width:2}
+.kpi-icon.info{background:var(--info-soft)}.kpi-icon.info svg{stroke:var(--info)}
+.kpi-icon.danger{background:var(--danger-soft)}.kpi-icon.danger svg{stroke:var(--danger)}
+.kpi-icon.warning{background:var(--warning-soft)}.kpi-icon.warning svg{stroke:var(--warning)}
+.kpi-icon.success{background:var(--success-soft)}.kpi-icon.success svg{stroke:var(--success)}
+.kpi-value{font-size:26px;font-weight:700;letter-spacing:-.02em;color:var(--text);font-family:var(--mono)}
+.kpi-foot{margin-top:7px;font-size:11.5px;color:var(--text-3)}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;border:1px solid}
+.badge-dot-only{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.b-success{background:var(--success-soft);color:var(--success);border-color:var(--success-border)}
+.b-warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning-border)}
+.b-danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-border)}
+.b-info{background:var(--info-soft);color:var(--info);border-color:var(--info-border)}
+.b-neutral{background:var(--surface-2);color:var(--text-2);border-color:var(--border)}
+
+/* ═══ TWO-COL ═══ */
+.two-col{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+@media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+/* ═══ TABS ═══ */
+.tabs{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px}
+.tab{flex:1;padding:6px 10px;font-size:12.5px;font-weight:500;color:var(--text-2);border:none;background:transparent;border-radius:4px;cursor:pointer;transition:all .12s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow-xs)}
+.tab-panel{display:none;margin-top:16px}
+.tab-panel.active{display:block}
+
+/* ═══ FORMS ═══ */
+label.field-label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+textarea,input[type=text],input[type=password]{width:100%;padding:10px 12px;font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);transition:border-color .12s;font-family:inherit}
+textarea{min-height:120px;resize:vertical;line-height:1.55}
+textarea:focus,input[type=text]:focus,input[type=password]:focus{outline:none;border-color:var(--accent)}
+textarea::placeholder,input::placeholder{color:var(--text-3)}
+.drop{border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:22px 16px;text-align:center;background:var(--surface-2);cursor:pointer;transition:border-color .12s,background .12s;position:relative}
+.drop:hover{border-color:var(--accent);background:var(--accent-soft)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-title{font-size:13px;font-weight:600;color:var(--text)}
+.drop-hint{font-size:11.5px;color:var(--text-3);margin-top:3px;font-family:var(--mono)}
+.drop-name{font-size:12px;color:var(--accent);margin-top:8px;font-family:var(--mono);font-weight:600}
+
+/* ═══ RESULT PANEL ═══ */
+.verdict{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-radius:var(--radius);border:1px solid;margin-bottom:16px}
+.verdict.high{background:var(--danger-soft);border-color:var(--danger-border)}
+.verdict.medium{background:var(--warning-soft);border-color:var(--warning-border)}
+.verdict.low{background:var(--success-soft);border-color:var(--success-border)}
+.v-left{display:flex;align-items:center;gap:14px}
+.v-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.v-icon svg{width:20px;height:20px;fill:none;stroke-width:2}
+.verdict.high .v-icon svg{stroke:var(--danger)}
+.verdict.medium .v-icon svg{stroke:var(--warning)}
+.verdict.low .v-icon svg{stroke:var(--success)}
+.v-label{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.verdict.high .v-label{color:var(--danger)}
+.verdict.medium .v-label{color:var(--warning)}
+.verdict.low .v-label{color:var(--success)}
+.v-rec{font-size:12.5px;color:var(--text-2);margin-top:2px;max-width:520px}
+.v-score{text-align:right;font-family:var(--mono)}
+.v-score-num{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.verdict.high .v-score-num{color:var(--danger)}
+.verdict.medium .v-score-num{color:var(--warning)}
+.verdict.low .v-score-num{color:var(--success)}
+.v-score-label{font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font)}
+
+/* ═══ BARS ═══ */
+.bar-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:5px;font-family:var(--mono)}
+.bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.fill-danger{background:var(--danger)}.fill-warning{background:var(--warning)}.fill-success{background:var(--success)}.fill-info{background:var(--info)}.fill-muted{background:var(--text-3)}
+
+/* ═══ MODALITY CARDS ═══ */
+.mod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.mod{padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.mod-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mod-name{font-size:11.5px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em}
+.mod-pred{font-size:13.5px;font-weight:700;margin-bottom:10px}
+.mod-pred.fake{color:var(--danger)}
+.mod-pred.real{color:var(--success)}
+.mod-pred.unkn{color:var(--text-3)}
+
+/* ═══ JSON ═══ */
+.json-block{background:#0F172A;color:#E2E8F0;border-radius:var(--radius-sm);padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.6;max-height:340px;overflow:auto;white-space:pre}
+
+/* ═══ ALERT LIST ═══ */
+.alert-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px}
+.alert-item .badge-dot-only{width:8px;height:8px}
+.alert-item .a-decision{font-size:12.5px;font-weight:700;min-width:120px}
+.alert-item .a-decision.high{color:var(--danger)}
+.alert-item .a-decision.medium{color:var(--warning)}
+.alert-item .a-decision.low{color:var(--success)}
+.alert-item .a-score{font-family:var(--mono);font-size:12px;color:var(--text-2);min-width:100px}
+.alert-item .a-time{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.empty-state{padding:40px 20px;text-align:center;color:var(--text-3);font-size:13px}
+
+/* ═══ MODEL STATUS ROW ═══ */
+.model-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.model-row:last-child{border-bottom:none}
+.model-icon{width:36px;height:36px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.model-icon svg{width:18px;height:18px;fill:none;stroke:var(--text-2);stroke-width:2}
+.model-info{flex:1;min-width:0}
+.model-name{font-size:13.5px;font-weight:600;color:var(--text)}
+.model-meta{font-size:11.5px;color:var(--text-3);font-family:var(--mono);margin-top:1px}
+
+/* ═══ METRIC ROW (perf table) ═══ */
+.metric-table{width:100%;border-collapse:collapse}
+.metric-table th{text-align:left;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;border-bottom:1px solid var(--border)}
+.metric-table td{padding:11px 12px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)}
+.metric-table td.mono{font-family:var(--mono);color:var(--text-2)}
+.metric-table tr:last-child td{border-bottom:none}
+.metric-table td:first-child{font-weight:600}
+
+/* ═══ SPINNER ═══ */
+.spinner-wrap{display:none;padding:24px;text-align:center}
+.spinner-wrap.show{display:block}
+.spinner{width:26px;height:26px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-text{font-size:12.5px;color:var(--text-2);font-family:var(--mono)}
+
+/* ═══ TOAST ═══ */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:12px 16px;box-shadow:var(--shadow-sm);font-size:13px;color:var(--text);display:none;z-index:100;max-width:340px}
+
+/* ═══ PRIVACY MODAL ═══ */
+.pv-overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.pv-overlay.show{display:flex}
+.pv-modal{background:var(--surface);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.25);max-width:640px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.pv-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.pv-head-icon{width:38px;height:38px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pv-head-icon svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:2}
+.pv-head h2{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+.pv-head p{font-size:12.5px;color:var(--text-3);margin-top:1px}
+.pv-body{padding:20px 24px;overflow-y:auto;font-size:13.5px;line-height:1.65;color:var(--text-2)}
+.pv-body h3{font-size:12.5px;font-weight:700;color:var(--text);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.pv-body h3:first-child{margin-top:0}
+.pv-body ul{margin:4px 0 4px 18px}
+.pv-body li{margin-bottom:4px}
+.pv-badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.pv-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pv-foot label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.pv-foot input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent)}
+
+
+/* ═══ LIVE THREAT NOTIFICATION BANNER ═══ */
+.threat-banner{margin:0 28px;margin-top:16px;border-radius:var(--radius);border:1px solid;box-shadow:var(--shadow-sm);animation:tb-slide-in .25s ease}
+@keyframes tb-slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.threat-banner.high{background:var(--danger-soft);border-color:var(--danger-border)}
+.threat-banner.medium{background:var(--warning-soft);border-color:var(--warning-border)}
+.tb-main{display:flex;align-items:flex-start;gap:14px;padding:16px 18px}
+.tb-icon{width:36px;height:36px;border-radius:9px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tb-icon svg{width:19px;height:19px;fill:none;stroke-width:2}
+.threat-banner.high .tb-icon svg{stroke:var(--danger)}
+.threat-banner.medium .tb-icon svg{stroke:var(--warning)}
+.tb-body{flex:1;min-width:0}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.threat-banner.high .tb-title{color:var(--danger)}
+.threat-banner.medium .tb-title{color:var(--warning)}
+.tb-more-count{font-size:11px;font-weight:600;color:var(--text-3);background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:1px 7px;margin-left:4px}
+.tb-summary{font-size:12.5px;color:var(--text-2);margin-top:3px;line-height:1.5;max-width:640px}
+.tb-actions{display:flex;gap:8px;margin-top:10px}
+.tb-detail{margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08);display:flex;gap:24px;flex-wrap:wrap}
+.tb-detail-col{flex:1;min-width:200px}
+.tb-detail-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:6px}
+.tb-detail-col ul{margin:0;padding-left:18px}
+.tb-detail-col li{font-size:12.5px;color:var(--text-2);line-height:1.6;margin-bottom:3px}
+.tb-score{text-align:right;flex-shrink:0;font-family:var(--mono)}
+.tb-score-num{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.threat-banner.high .tb-score-num{color:var(--danger)}
+.threat-banner.medium .tb-score-num{color:var(--warning)}
+.tb-score-label{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;font-family:var(--font)}
+
+.toast.show{display:block}
+.toast.danger{border-left-color:var(--danger)}
+.toast.success{border-left-color:var(--success)}
+
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{display:none}.mod-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="side-logo">
+      <div class="side-logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2 L4 6 v6 c0 5 3.5 9 8 10 4.5-1 8-5 8-10 V6 z"/></svg>
+      </div>
+      <div>
+        <div class="side-logo-text">NeuraShield</div>
+        <div class="side-logo-sub">Layer 4 · Content Threat</div>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <div class="nav-section">
+        <div class="nav-label">Detection</div>
+        <div class="nav-item active" data-view="analyse">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Analyse content
+        </div>
+        <div class="nav-item" data-view="performance">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
+          Model performance
+        </div>
+        <div class="nav-item" data-view="alerts">
+          <svg viewBox="0 0 24 24"><path d="M12 2v3M4.9 4.9l2.1 2.1M2 12h3M4.9 19.1l2.1-2.1M12 19v3M17 17l2.1 2.1M19 12h3M17 7l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
+          Alert history
+          <span class="nav-badge" id="alert-badge">0</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">System</div>
+        <div class="nav-item" data-view="watchers">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
+          Automatic monitors
+        </div>
+        <div class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Platform</div>
+        <div class="nav-item" onclick="window.location.href='/'">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to platform
+        </div>
+        <div class="nav-item" onclick="window.open('/docs','_blank')">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          API documentation
+        </div>
+        <div class="nav-item" onclick="openPrivacyModal()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Privacy &amp; monitoring
+        </div>
+      </div>
+    </nav>
+
+    <div class="side-foot">
+      <div class="side-status">
+        <div class="status-dot-sm" id="side-status-dot"></div>
+        <span id="side-status-text">All models operational</span>
+      </div>
+      <div class="side-version">v1.0.0 · Content Threat</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="crumbs">
+        <a href="/">Platform</a>
+        <span class="sep">/</span>
+        <span>Layer 4</span>
+      </div>
+      <div class="page-title-wrap" style="margin-left:8px">
+        <div class="page-title" id="page-title">Content analysis</div>
+        <div class="page-sub" id="page-sub">Multimodal threat detection — text, video, audio</div>
+      </div>
+      <div class="topbar-right">
+        <span class="chip"><div class="status-dot-sm"></div><span id="tb-time"></span></span>
+        <span class="chip" id="tb-total">0 analyses</span>
+        <button class="icon-btn" title="Refresh" onclick="refreshAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="threat-banner-host"></div>
+
+    <div class="content">
+
+      <!-- KPI cards -->
+      <div class="kpi-grid">
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Total analyses</span>
+            <div class="kpi-icon info"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></div>
+          </div>
+          <div class="kpi-value" id="k-total">0</div>
+          <div class="kpi-foot">since server start</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">High-risk detections</span>
+            <div class="kpi-icon danger"><svg viewBox="0 0 24 24"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg></div>
+          </div>
+          <div class="kpi-value" id="k-high" style="color:var(--danger)">0</div>
+          <div class="kpi-foot">alerts sent to Layer 4</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Medium-risk flags</span>
+            <div class="kpi-icon warning"><svg viewBox="0 0 24 24"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="10"/></svg></div>
+          </div>
+          <div class="kpi-value" id="k-med" style="color:var(--warning)">0</div>
+          <div class="kpi-foot">flagged for review</div>
+        </div>
+        <div class="card kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">Threat rate</span>
+            <div class="kpi-icon success"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></div>
+          </div>
+          <div class="kpi-value" id="k-rate" style="color:var(--success)">0%</div>
+          <div class="kpi-foot">of all analysed content</div>
+        </div>
+      </div>
+
+      <!-- ═══ VIEW: ANALYSE ═══ -->
+      <div class="view active" id="view-analyse">
+
+        <!-- Live call monitor status - only shown while it's actually running -->
+        <div class="card" id="live-call-strip" style="display:none;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:tb-slide-in .25s ease" id="live-call-dot"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;font-weight:600;color:var(--text)">Live call monitor is active</div>
+              <div style="font-size:11.5px;color:var(--text-3)" id="live-call-detail">Watching audio + video…</div>
+            </div>
+            <div style="text-align:right;font-family:var(--mono)">
+              <span class="badge" id="live-call-badge"><span class="badge-dot-only"></span>—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+
+          <!-- Input -->
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Content input</h3>
+                <div class="card-sub">Analyse a single item across selected modalities</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="tabs">
+                <button class="tab active" data-tab="text">Email</button>
+                <button class="tab" data-tab="video">Video</button>
+                <button class="tab" data-tab="audio">Audio</button>
+                <button class="tab" data-tab="all">Multimodal</button>
+              </div>
+
+              <div class="tab-panel active" id="tab-text">
+                <label class="field-label">Email content</label>
+                <textarea id="email-text" placeholder="Paste email content for phishing analysis. Example: &#10;&#10;Dear customer, your account has been suspended due to suspicious activity. Click here immediately to verify your identity or your account will be permanently deleted."></textarea>
+              </div>
+
+              <div class="tab-panel" id="tab-video">
+                <label class="field-label">Video file</label>
+                <div class="drop">
+                  <input type="file" id="video-file" accept=".mp4,.avi,.mov,.mkv" onchange="setFileName(this,'v-name')">
+                  <div class="drop-title">Drop video file or click to browse</div>
+                  <div class="drop-hint">.mp4 · .avi · .mov · .mkv · max 200 MB</div>
+                  <div class="drop-name" id="v-name">No file selected</div>
+                </div>
+              </div>
+
+              <div class="tab-panel" id="tab-audio">
+                <label class="field-label">Audio file</label>
+                <div class="drop">
+                  <input type="file" id="audio-file" accept=".flac,.wav,.mp3,.m4a" onchange="setFileName(this,'a-name')">
+                  <div class="drop-title">Drop audio file or click to browse</div>
+                  <div class="drop-hint">.flac · .wav · .mp3 · .m4a · max 25 MB</div>
+                  <div class="drop-name" id="a-name">No file selected</div>
+                </div>
+              </div>
+
+              <div class="tab-panel" id="tab-all">
+                <label class="field-label">Email content (optional)</label>
+                <textarea id="all-text" placeholder="Email text..." style="min-height:80px"></textarea>
+                <label class="field-label" style="margin-top:12px">Video (optional)</label>
+                <div class="drop">
+                  <input type="file" id="all-video" accept=".mp4,.avi,.mov,.mkv" onchange="setFileName(this,'av-name')">
+                  <div class="drop-title">Video file</div>
+                  <div class="drop-name" id="av-name">No file selected</div>
+                </div>
+                <label class="field-label" style="margin-top:12px">Audio (optional)</label>
+                <div class="drop">
+                  <input type="file" id="all-audio" accept=".flac,.wav,.mp3,.m4a" onchange="setFileName(this,'aa-name')">
+                  <div class="drop-title">Audio file</div>
+                  <div class="drop-name" id="aa-name">No file selected</div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center" onclick="runAnalysis()">
+                <svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+                Run threat analysis
+              </button>
+
+              <div class="spinner-wrap" id="spin">
+                <div class="spinner"></div>
+                <div class="spin-text">Analysing content across modalities…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Detection result</h3>
+                <div class="card-sub" id="result-sub">Submit content to see analysis</div>
+              </div>
+              <span id="request-id" style="font-family:var(--mono);font-size:11px;color:var(--text-3)"></span>
+            </div>
+            <div class="card-body">
+
+              <div id="empty" class="empty-state">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px;opacity:.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <div>Submit content to see the threat analysis result</div>
+              </div>
+
+              <div id="result-panel" style="display:none">
+                <div class="verdict" id="verdict">
+                  <div class="v-left">
+                    <div class="v-icon" id="v-icon"></div>
+                    <div>
+                      <div class="v-label" id="v-label"></div>
+                      <div class="v-rec" id="v-rec"></div>
+                    </div>
+                  </div>
+                  <div class="v-score">
+                    <div class="v-score-num" id="v-score-num"></div>
+                    <div class="v-score-label">Risk score</div>
+                  </div>
+                </div>
+
+                <div style="margin-bottom:16px">
+                  <div class="bar-row"><span>Combined threat risk</span><span id="v-pct">0%</span></div>
+                  <div class="bar"><div class="bar-fill" id="v-bar" style="width:0"></div></div>
+                </div>
+
+                <div class="mod-grid" id="mod-grid"></div>
+
+                <div style="font-family:var(--mono);font-size:11px;color:var(--text-3);text-align:right" id="proc-time"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JSON output -->
+        <div class="card" id="json-card" style="display:none;margin-top:16px">
+          <div class="card-head">
+            <div>
+              <h3>Alert payload</h3>
+              <div class="card-sub">Structured alert delivered to Layer 4 (Zero-Trust)</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="copyJson()">Copy JSON</button>
+          </div>
+          <div class="card-body" style="padding:14px">
+            <div class="json-block" id="json-out"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VIEW: PERFORMANCE ═══ -->
+      <div class="view" id="view-performance">
+        <div class="page-header">
+          <div>
+            <h1>Model performance</h1>
+            <p>Held-out evaluation results. All numbers reproducible from released eval scripts.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head"><div><h3>Per-modality metrics</h3><div class="card-sub">Reported on held-out data — including the official ASVspoof 2019 LA evaluation partition for audio</div></div></div>
+          <div class="card-body" style="padding:0">
+            <table class="metric-table">
+              <thead>
+                <tr><th>Modality</th><th>Model</th><th>Test set</th><th>Headline metric</th><th>Additional</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Text (phishing)</td><td class="mono">DistilBERT-base</td><td class="mono">6,000 held-out rows</td><td><span class="badge b-success">EER 2.15%</span></td><td class="mono">F1 98.0 · AUC 0.997</td></tr>
+                <tr><td>Video (deepfake)</td><td class="mono">MobileNetV2 + face-crop</td><td class="mono">241 held-out clips</td><td><span class="badge b-success">Accuracy 84.2%</span></td><td class="mono">Recall 81.2 · AUC 0.927</td></tr>
+                <tr><td>Audio (spoof)</td><td class="mono">ResNet-18 (log-mel)</td><td class="mono">ASVspoof 2019 LA eval · 71,237 clips</td><td><span class="badge b-success">EER 9.00%</span></td><td class="mono">AUC 0.960 · Acc@EER 91.0</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div><h3>Video preprocessing fix — before/after</h3><div class="card-sub">Adopting face-crop preprocessing recovered 24.8 percentage points of fake-recall on the same held-out split</div></div></div>
+          <div class="card-body" style="padding:0">
+            <table class="metric-table">
+              <thead>
+                <tr><th>Preprocessing</th><th>Accuracy</th><th>Recall (fakes)</th><th>F1</th><th>AUC</th><th>EER</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Whole-frame (baseline)</td><td class="mono">74.7%</td><td class="mono">56.4%</td><td class="mono">71.1%</td><td class="mono">0.863</td><td class="mono">18.1%</td></tr>
+                <tr><td>Face-crop (adopted)</td><td class="mono">84.2%</td><td class="mono">81.2%</td><td class="mono">85.0%</td><td class="mono">0.927</td><td class="mono">15.7%</td></tr>
+                <tr><td>Δ</td><td class="mono" style="color:var(--success);font-weight:600">+9.5pp</td><td class="mono" style="color:var(--success);font-weight:600">+24.8pp</td><td class="mono" style="color:var(--success);font-weight:600">+14.0pp</td><td class="mono" style="color:var(--success);font-weight:600">+0.064</td><td class="mono" style="color:var(--success);font-weight:600">−2.4pp</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-head"><div><h3>Reported limitations</h3><div class="card-sub">Disclosed for evaluation transparency</div></div></div>
+          <div class="card-body" style="font-size:13px;line-height:1.6;color:var(--text-2)">
+            <p style="margin-bottom:10px"><strong style="color:var(--text)">Video dataset overlap.</strong> The FaceForensics++ subset was a single pool without pre-defined split. Held-out numbers are on a fixed seeded 30% split; if the CNN was trained on the same pool, some overlap with training is possible.</p>
+            <p style="margin-bottom:10px"><strong style="color:var(--text)">Class imbalance in audio eval.</strong> ASVspoof 2019 LA eval is dominated by spoof examples (63,882 vs 7,355). Both the naive 0.5 threshold and the EER-calibrated operating point (0.002) are reported; production uses the calibrated threshold.</p>
+            <p><strong style="color:var(--text)">Real-time capture pipeline unvalidated against live traffic.</strong> Detection models are validated on offline test sets. IMAP watcher and WASAPI-loopback call monitor are working prototypes tested with synthetic inputs; live end-to-end validation is future work.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VIEW: ALERTS ═══ -->
+      <div class="view" id="view-alerts">
+        <div class="page-header">
+          <div>
+            <h1>Alert history</h1>
+            <p>Structured alerts issued by this layer. All deliveries forwarded to Layer 4 (Zero-Trust).</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadAlerts()">
+            <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-body" id="alert-list">
+            <div class="empty-state">Loading alerts…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VIEW: WATCHERS ═══ -->
+      <div class="view" id="view-watchers">
+        <div class="page-header">
+          <div>
+            <h1>Automatic monitors</h1>
+            <p>Continuous detection paths that do not require manual upload — configure and control them right here</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <!-- Mail watcher -->
+          <div class="card">
+            <div class="card-head">
+              <div><h3>IMAP mail watcher</h3><div class="card-sub">Polls a monitored mailbox for new mail and runs each through the text detector</div></div>
+              <span class="badge" id="w-mail-badge"><span class="badge-dot-only"></span>—</span>
+            </div>
+            <div class="card-body">
+              <div id="w-mail-detail" style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;font-family:var(--mono)">Checking status…</div>
+
+              <div id="w-mail-stats" style="display:none;margin-bottom:16px">
+                <div class="bar-row"><span>Emails checked</span><span id="w-mail-checked">0</span></div>
+                <div class="bar-row"><span>Phishing found</span><span id="w-mail-phishing">0</span></div>
+                <div class="bar-row"><span>Last activity</span><span id="w-mail-last">—</span></div>
+              </div>
+
+              <div id="w-mail-form">
+                <label class="field-label">Mailbox provider</label>
+                <select id="w-mail-provider" onchange="applyMailProviderPreset()" style="width:100%;padding:9px 10px;font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);margin-bottom:12px">
+                  <option value="imap.gmail.com">Gmail</option>
+                  <option value="outlook.office365.com">Outlook.com / Office 365</option>
+                  <option value="">Other IMAP provider</option>
+                </select>
+
+                <label class="field-label">IMAP host</label>
+                <input type="text" id="w-mail-host" placeholder="imap.gmail.com" value="imap.gmail.com" style="margin-bottom:12px">
+
+                <label class="field-label">Email address</label>
+                <input type="text" id="w-mail-user" placeholder="you@example.com" style="margin-bottom:12px">
+
+                <label class="field-label">App password</label>
+                <input type="password" id="w-mail-password" placeholder="16-character app password (not your normal password)" style="margin-bottom:6px">
+                <div style="font-size:11.5px;color:var(--text-3);margin-bottom:14px">
+                  Not your regular password. Generate one at
+                  <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent)">myaccount.google.com/apppasswords</a> (Gmail) or your provider's security settings. Stored encrypted on this machine, never sent anywhere except your mail provider.
+                  <br><strong style="color:var(--text-2)">No app password available?</strong> Use <em>More ways to watch email</em> below &mdash; Google sign-in, a drop folder, or an .eml upload.
+                </div>
+
+                <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="startMailWatcher()">
+                  <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+                  Connect &amp; start watching
+                </button>
+              </div>
+
+              <div id="w-mail-running" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="stopMailWatcher()">Stop watching</button>
+                  <button class="btn btn-secondary btn-sm" onclick="forgetMailConfig()" title="Stop and forget saved credentials">Forget</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Call monitor -->
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Real-time call monitor</h3><div class="card-sub">Audio (voice-clone) + video (deepfake) — captures via system audio and screen, works with Teams, Zoom, Phone Link without per-app integration</div></div>
+              <span class="badge" id="w-call-badge"><span class="badge-dot-only"></span>—</span>
+            </div>
+            <div class="card-body">
+              <div id="w-call-detail" style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;font-family:var(--mono)">Checking status…</div>
+
+              <div id="w-call-stats" style="display:none;margin-bottom:16px">
+                <div class="bar-row"><span>Audio checks</span><span id="w-call-audio">0</span></div>
+                <div class="bar-row"><span>Video checks</span><span id="w-call-video">0</span></div>
+                <div class="bar-row"><span>High-risk calls</span><span id="w-call-high">0</span></div>
+                <div class="bar-row"><span>Last activity</span><span id="w-call-last">—</span></div>
+              </div>
+
+              <div style="background:var(--warning-soft);border:1px solid var(--warning-border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--text-2);line-height:1.5">
+                <strong style="color:var(--text)">Before you turn this on:</strong> it captures whatever audio is playing through your speakers and periodic screenshots of your call window while a call app is running, to check for cloned voices and deepfake video. It does not record or store the raw audio/video — only the risk decision. Off by default; you're choosing to enable it.
+              </div>
+
+              <button class="btn btn-primary" id="w-call-toggle-btn" style="width:100%;justify-content:center" onclick="toggleCallMonitor()">
+                <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+                Enable call monitoring
+              </button>
+
+              <p style="margin-top:14px;font-size:12px;color:var(--text-3)">Detection models validated (audio 9.00% EER on official ASVspoof eval; video 84.2% accuracy / 81.2% recall on held-out clips). The live-capture pipeline is a working prototype — first real call is genuinely the first live-world test.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ More ways to watch email (no app password needed) ═══ -->
+        <div class="page-header" style="margin-top:28px">
+          <div>
+            <h1 style="font-size:18px">More ways to watch email</h1>
+            <p>No app password needed. Pick whichever fits your mail setup — they all use the same phishing detector and the same alerts.</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <!-- Gmail via Google sign-in -->
+          <div class="card" >
+            <div class="card-head">
+              <div><h3>Gmail — sign in with Google</h3><div class="card-sub">Read-only access (gmail.readonly). Never marks, moves, sends or deletes mail</div></div>
+              <span class="badge" id="w-gmail-badge"><span class="badge-dot-only"></span>—</span>
+            </div>
+            <div class="card-body">
+              <div id="w-gmail-detail" style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;font-family:var(--mono)">Checking status…</div>
+
+              <div id="w-gmail-stats" style="display:none;margin-bottom:16px">
+                <div class="bar-row"><span>Account</span><span id="w-gmail-account">—</span></div>
+                <div class="bar-row"><span>Emails checked</span><span id="w-gmail-checked">0</span></div>
+                <div class="bar-row"><span>Phishing found</span><span id="w-gmail-phishing">0</span></div>
+                <div class="bar-row"><span>Last activity</span><span id="w-gmail-last">—</span></div>
+              </div>
+
+              <!-- step 1: one-time Google Cloud client -->
+              <div id="w-gmail-setup" style="display:none" >
+                <label class="field-label">Google OAuth client ID</label>
+                <input type="text" id="w-gmail-client-id" placeholder="123456789-abc.apps.googleusercontent.com" style="margin-bottom:12px" autocomplete="off">
+                <label class="field-label">Google OAuth client secret</label>
+                <input type="password" id="w-gmail-client-secret" placeholder="GOCSPX-…" style="margin-bottom:10px" autocomplete="off">
+                <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveGmailClient()">Save client</button>
+                <details style="margin-top:14px;font-size:12px;color:var(--text-2);line-height:1.55">
+                  <summary style="cursor:pointer;font-weight:600">One-time setup (about 5 minutes, free)</summary>
+                  <ol style="margin:8px 0 0 18px;padding:0">
+                    <li>Open <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" style="color:var(--accent)">console.cloud.google.com</a> and create a project.</li>
+                    <li><strong>APIs &amp; Services → Library</strong> → enable <strong>Gmail API</strong>.</li>
+                    <li><strong>OAuth consent screen</strong> → User type <em>External</em> → fill in the app name → under <strong>Test users</strong> add your own Gmail address.</li>
+                    <li><strong>Credentials → Create credentials → OAuth client ID</strong> → type <strong>Desktop app</strong> → copy the client ID and secret here.</li>
+                  </ol>
+                  <p style="margin:8px 0 0">While the project is in <em>Testing</em>, Google shows an "unverified app" warning (choose Advanced → continue) and sign-in expires after 7 days — just sign in again. Removing that needs Google's app verification, a commercial-release step.</p>
+                </details>
+              </div>
+
+              <!-- step 2: sign in -->
+              <div id="w-gmail-signin" style="display:none">
+                <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="gmailSignIn()">Sign in with Google</button>
+                <div id="w-gmail-link-wrap" style="display:none;margin-top:10px;font-size:12px;color:var(--text-2)">Pop-up blocked? <a id="w-gmail-link" href="#" target="_blank" rel="noopener" style="color:var(--accent)">Open Google sign-in</a></div>
+                <div style="font-size:11.5px;color:var(--text-3);margin-top:10px">Opens Google in a new tab. NeuraShield stores only an encrypted refresh token on this machine, and scans mail that arrives <em>after</em> you connect.</div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="gmailForgetClient()">Change client ID/secret</button>
+              </div>
+
+              <!-- step 3: connected -->
+              <div id="w-gmail-connected" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <button class="btn btn-secondary" id="w-gmail-toggle" style="flex:1;justify-content:center" onclick="gmailToggle()">Stop watching</button>
+                  <button class="btn btn-secondary btn-sm" onclick="gmailSignOut()" title="Revoke access and forget the sign-in">Sign out</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Folder / notifications / upload -->
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Any mail client — folder, upload, notifications</h3><div class="card-sub">Works with Gmail, Outlook, Thunderbird, Yahoo, corporate mail… no sign-in at all</div></div>
+            </div>
+            <div class="card-body">
+
+              <!-- Drop folder -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <strong style="font-size:13px">Drop-folder watcher</strong>
+                <span class="badge" id="w-folder-badge"><span class="badge-dot-only"></span>—</span>
+              </div>
+              <div id="w-folder-detail" style="font-size:12px;color:var(--text-2);margin-bottom:10px;font-family:var(--mono)">Checking status…</div>
+              <p style="font-size:12px;color:var(--text-3);margin:0 0 10px;line-height:1.5">Any <code>.eml</code> file saved to this folder is scanned automatically (in Gmail: ⋮ → <em>Download message</em>; in Outlook/Thunderbird: drag the email in, or add a rule). Your files are never changed or deleted.</p>
+              <input type="text" id="w-folder-path" placeholder="Folder to watch (leave blank for the default 'inbox_watch')" style="margin-bottom:10px">
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" id="w-folder-toggle" style="flex:1;justify-content:center" onclick="folderToggle()">Start watching folder</button>
+              </div>
+
+              <hr style="border:none;border-top:1px solid var(--border);margin:18px 0">
+
+              <!-- Manual .eml upload -->
+              <strong style="font-size:13px">Scan an email file now</strong>
+              <p style="font-size:12px;color:var(--text-3);margin:6px 0 10px;line-height:1.5">Pick an <code>.eml</code> file for an instant check (max 5 MB).</p>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="file" id="w-eml-file" accept=".eml" style="flex:1;font-size:12px">
+                <button class="btn btn-secondary btn-sm" onclick="scanEmlFile()">Scan</button>
+              </div>
+              <div id="w-eml-result" style="font-size:12.5px;margin-top:10px;font-family:var(--mono);color:var(--text-2)"></div>
+
+              <hr style="border:none;border-top:1px solid var(--border);margin:18px 0">
+
+              <!-- Notification watcher -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <strong style="font-size:13px">Mail notification watcher <span style="font-weight:500;color:var(--text-3)">(experimental, Windows)</span></strong>
+                <span class="badge" id="w-notif-badge"><span class="badge-dot-only"></span>—</span>
+              </div>
+              <div id="w-notif-detail" style="font-size:12px;color:var(--text-2);margin-bottom:10px;font-family:var(--mono)">Checking status…</div>
+              <div style="background:var(--warning-soft);border:1px solid var(--warning-border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.5">
+                <strong style="color:var(--text)">Before you turn this on:</strong> it reads Windows' local notification history, but only looks at notifications from mail apps or webmail (Outlook, Mail, Gmail/Outlook.com in Chrome or Edge) and ignores every other app. A notification shows only the sender, subject and a short preview — not the full email — so this is an <em>early warning</em>, weaker than the other methods. The text is scored in memory and never stored. Off by default.
+              </div>
+              <button class="btn btn-secondary" id="w-notif-toggle" style="width:100%;justify-content:center" onclick="notifToggle()">Enable notification watching</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ VIEW: SETTINGS ═══ -->
+      <div class="view" id="view-settings">
+        <div class="page-header">
+          <div>
+            <h1>Settings</h1>
+            <p>Runtime configuration and system status</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head"><div><h3>Detection models</h3><div class="card-sub">Load status and version</div></div></div>
+            <div class="card-body" id="model-status">
+              <div class="empty-state">Checking…</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Runtime configuration</h3><div class="card-sub">Set via environment variables at startup</div></div></div>
+            <div class="card-body">
+              <table class="metric-table">
+                <tbody>
+                  <tr><td>API authentication</td><td class="mono" id="cfg-auth">—</td></tr>
+                  <tr><td>Rate limit</td><td class="mono">30 req/min per client (default)</td></tr>
+                  <tr><td>Max upload · video</td><td class="mono">200 MB</td></tr>
+                  <tr><td>Max upload · audio</td><td class="mono">25 MB</td></tr>
+                  <tr><td>Alert routing</td><td class="mono">→ Layer 4 (Zero-Trust)</td></tr>
+                  <tr><td>API version</td><td class="mono" id="cfg-ver">—</td></tr>
+                  <tr><td>Uptime since</td><td class="mono" id="cfg-uptime">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ PRIVACY & MONITORING NOTICE ═══ -->
+<div class="pv-overlay" id="pv-overlay">
+  <div class="pv-modal">
+    <div class="pv-head">
+      <div class="pv-head-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div>
+        <h2>Before you continue</h2>
+        <p>How this layer handles the content it analyses</p>
+      </div>
+    </div>
+    <div class="pv-body">
+      <h3>What this system does</h3>
+      <p>This layer analyses email text, video, and audio to detect phishing, deepfake video, and cloned/synthetic voices. It can do this two ways: content you upload directly here, or — if enabled — automatically, by monitoring a connected mailbox and/or live call audio in the background.</p>
+
+      <h3>Automatic monitoring status</h3>
+      <div class="pv-badge-row">
+        <span class="badge b-neutral" id="pv-mail-badge"><span class="badge-dot-only"></span>Mail watcher — checking…</span>
+        <span class="badge b-neutral" id="pv-call-badge"><span class="badge-dot-only"></span>Call monitor — checking…</span>
+      </div>
+      <p>Mail monitoring only runs once you connect a mailbox in <strong>Automatic Monitors</strong>. Call monitoring is <strong>off by default</strong> and only runs if you explicitly turn it on there, because it captures live system audio and on-screen video during a call — a meaningfully more sensitive capability than checking an inbox.</p>
+
+      <h3>What is captured</h3>
+      <ul>
+        <li>Manual analysis: the specific email text, video, or audio file you submit</li>
+        <li>Mail watcher (if enabled): the text of new emails in the connected mailbox</li>
+        <li>Gmail sign-in, drop-folder and notification watchers (if enabled): the text of new emails — or, for the notification watcher, only the sender, subject and preview shown in mail notifications (notifications from every other app are ignored)</li>
+        <li>Call monitor (if enabled): system audio and periodic screenshots of the call window while a call app is running</li>
+      </ul>
+
+      <h3>What is NOT kept</h3>
+      <ul>
+        <li>Raw content (the email body, the video/audio file itself) is deleted immediately after it is analysed — it is not stored</li>
+        <li>Only the decision (risk score, real/fake, phishing/normal) and metadata are retained, in a signed, tamper-evident alert log</li>
+        <li>No email, video or audio content is sent to any cloud AI service — all analysis happens on this machine. (If you sign in with Google or connect a mailbox, NeuraShield fetches your mail from that provider the same way a mail app would; Google access is read-only and can be revoked with Sign out.)</li>
+      </ul>
+
+      <h3>Your controls</h3>
+      <ul>
+        <li>Turn mail and call monitoring on or off any time in <strong>Automatic monitors</strong> — nothing runs without you enabling it there</li>
+        <li>You can view every alert this layer has produced in <strong>Alert history</strong></li>
+        <li>When a threat is detected, you'll see a live notification with guidance — acknowledging it is recorded in the tamper-evident audit log</li>
+      </ul>
+
+      <p style="margin-top:14px;font-size:12px;color:var(--text-3)">This notice reflects the current build's actual behaviour. For deployment beyond a demo/research setting, formal user consent and a data retention policy should be established.</p>
+    </div>
+    <div class="pv-foot">
+      <label><input type="checkbox" id="pv-dont-show"> Don't show this again on this device</label>
+      <button class="btn btn-primary" onclick="acknowledgePrivacyModal()">I understand — continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ Config ═══
+// If Layer 4 (platform) sets an API key, plumb the same one through here.
+// INTEGRATION FIX: this used to always fall through to '' (open/demo mode)
+// because nothing ever set window.NEURASHIELD_API_KEY. Now app.py's
+// serve_dashboard() route injects the server's real _API_KEY here at
+// request time, so this page always sends whatever key the API is
+// actually enforcing — no manual sync needed between server and page.
+window.NEURASHIELD_API_KEY = "__NEURASHIELD_API_KEY__";
+const NEURASHIELD_API_KEY = window.NEURASHIELD_API_KEY || '';
+const AUTH_HEADERS = NEURASHIELD_API_KEY ? {'X-API-Key': NEURASHIELD_API_KEY} : {};
+
+// ═══ Privacy & monitoring notice ═══
+const PV_ACK_KEY = 'neurashield_privacy_ack';
+
+function openPrivacyModal(){
+  document.getElementById('pv-overlay').classList.add('show');
+  populatePrivacyBadges();
+}
+function acknowledgePrivacyModal(){
+  if(document.getElementById('pv-dont-show').checked){
+    try { localStorage.setItem(PV_ACK_KEY, '1'); } catch(e){}
+  }
+  document.getElementById('pv-overlay').classList.remove('show');
+}
+async function populatePrivacyBadges(){
+  try {
+    const r = await fetch('/api/watchers/status', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    setPvBadge('pv-mail-badge', 'Mail watcher', d.mail_watcher?.state);
+    setPvBadge('pv-call-badge', 'Call monitor', d.call_monitor?.state);
+  } catch(e){
+    document.getElementById('pv-mail-badge').innerHTML = '<span class="badge-dot-only"></span>Mail watcher — unknown';
+    document.getElementById('pv-call-badge').innerHTML = '<span class="badge-dot-only"></span>Call monitor — unknown';
+  }
+}
+function setPvBadge(id, label, state){
+  const el = document.getElementById(id);
+  const map = {running:['b-success','var(--success)','active'],
+              starting:['b-info','var(--info)','starting'],
+              error:['b-danger','var(--danger)','error'],
+              disabled:['b-neutral','var(--text-3)','off']};
+  const [cls,color,text] = map[state] || map.disabled;
+  el.className = 'badge ' + cls;
+  el.innerHTML = `<span class="badge-dot-only" style="background:${color}"></span>${label} — ${text}`;
+}
+
+// Show automatically on first visit to this device only.
+try {
+  if(!localStorage.getItem(PV_ACK_KEY)) {
+    window.addEventListener('DOMContentLoaded', openPrivacyModal);
+  }
+} catch(e){
+  window.addEventListener('DOMContentLoaded', openPrivacyModal);
+}
+
+let activeTab = 'text';
+let lastJson = '';
+
+// SECURITY: escapes &, <, >, " before any externally-sourced text
+// (alert messages, analysis results, filenames, etc.) is inserted via
+// innerHTML — matches the same pattern already used in
+// central_dashboard.html. Not currently exploitable anywhere in this
+// file (nothing user/model-controlled is echoed into innerHTML yet),
+// but any future feature that displays analyzed text, filenames, or
+// alert content back to the user should route it through esc() first
+// rather than reintroduce this check from scratch.
+function esc(s){return (s||'').toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+// ═══ Nav ═══
+document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+  el.addEventListener('click', () => showView(el.dataset.view, el));
+});
+function showView(name, el){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles = {analyse:['Content analysis','Multimodal threat detection — text, video, audio'],
+                  performance:['Model performance','Held-out evaluation results'],
+                  alerts:['Alert history','Structured alerts issued by this layer'],
+                  watchers:['Automatic monitors','Continuous detection paths'],
+                  settings:['Settings','Runtime configuration and status']};
+  const [t,s] = titles[name] || [name,''];
+  document.getElementById('page-title').textContent = t;
+  document.getElementById('page-sub').textContent = s;
+  if(name==='alerts') loadAlerts();
+  if(name==='watchers') loadWatcherStatus();
+  if(name==='settings') loadHealth();
+}
+
+// ═══ Tabs ═══
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+    activeTab = t.dataset.tab;
+  });
+});
+
+function setFileName(input, id){
+  document.getElementById(id).textContent = input.files[0] ? input.files[0].name : 'No file selected';
+}
+
+// ═══ Toast ═══
+function toast(msg, kind){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind || '');
+  setTimeout(() => t.classList.remove('show'), 3400);
+}
+
+// ═══ Stats / clock ═══
+async function updateStats(){
+  try {
+    const r = await fetch('/api/stats', {headers: AUTH_HEADERS});
+    if(!r.ok) return;
+    const d = await r.json();
+    document.getElementById('k-total').textContent = d.total_analyses;
+    document.getElementById('k-high').textContent = d.high_risk;
+    document.getElementById('k-med').textContent = d.medium_risk;
+    document.getElementById('k-rate').textContent = d.threat_rate_pct + '%';
+    document.getElementById('tb-total').textContent = d.total_analyses + ' analyses';
+    const b = document.getElementById('alert-badge');
+    const n = (d.high_risk || 0) + (d.medium_risk || 0);
+    if(n > 0){ b.textContent = n; b.classList.add('show'); } else { b.classList.remove('show'); }
+  } catch(e){}
+}
+function tick(){
+  document.getElementById('tb-time').textContent = new Date().toTimeString().slice(0,8);
+}
+updateStats(); tick();
+setInterval(updateStats, 5000);
+setInterval(tick, 1000);
+
+// ═══ Health ═══
+async function loadHealth(){
+  try {
+    const r = await fetch('/health', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    const m = d.models_loaded;
+    // Sidebar summary
+    const anyMissing = !m.text_phishing_classifier || !m.video_deepfake_classifier || !m.audio_clone_classifier;
+    document.getElementById('side-status-dot').classList.toggle('off', anyMissing);
+    document.getElementById('side-status-text').textContent = anyMissing ? 'Some models unavailable' : 'All models operational';
+
+    // Model status panel
+    const models = [
+      {key:'text_phishing_classifier', name:'Text — DistilBERT (phishing)', meta:'2.15% EER · 98.0% F1', icon:'<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 4l8 8 8-8"/></svg>'},
+      {key:'video_deepfake_classifier', name:'Video — MobileNetV2 face-crop', meta:'84.2% acc · 0.927 AUC', icon:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M22 8l-6 4 6 4z"/></svg>'},
+      {key:'audio_clone_classifier', name:'Audio — ResNet-18 (log-mel)', meta:'9.00% EER · 0.960 AUC', icon:'<svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>'},
+    ];
+    const panel = document.getElementById('model-status');
+    panel.innerHTML = '';
+    models.forEach(mod => {
+      const loaded = m[mod.key];
+      panel.insertAdjacentHTML('beforeend', `
+        <div class="model-row">
+          <div class="model-icon">${mod.icon}</div>
+          <div class="model-info">
+            <div class="model-name">${mod.name}</div>
+            <div class="model-meta">${mod.meta}</div>
+          </div>
+          <span class="badge ${loaded?'b-success':'b-danger'}">
+            <span class="badge-dot-only" style="background:currentColor"></span>
+            ${loaded ? 'Loaded' : 'Not loaded'}
+          </span>
+        </div>`);
+    });
+
+    document.getElementById('cfg-auth').textContent = NEURASHIELD_API_KEY ? 'Enabled (X-API-Key required)' : 'Disabled (open, demo mode)';
+    document.getElementById('cfg-ver').textContent = d.system_info?.api_version || '—';
+    document.getElementById('cfg-uptime').textContent = d.system_info?.uptime_since ? new Date(d.system_info.uptime_since).toLocaleString() : '—';
+  } catch(e){
+    document.getElementById('model-status').innerHTML = '<div class="empty-state" style="color:var(--danger)">Could not reach /health</div>';
+  }
+}
+loadHealth();
+
+// ═══ Watcher control (Automatic Monitors) ═══
+const MAIL_PROVIDER_HOSTS = {
+  'imap.gmail.com': 'imap.gmail.com',
+  'outlook.office365.com': 'outlook.office365.com',
+};
+function applyMailProviderPreset(){
+  const sel = document.getElementById('w-mail-provider').value;
+  if(sel) document.getElementById('w-mail-host').value = sel;
+}
+
+async function loadWatcherStatus(){
+  try {
+    const r = await fetch('/api/watchers/status', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    renderMailWatcher(d.mail_watcher);
+    renderCallMonitor(d.call_monitor);
+    loadSourcesStatus();
+  } catch(e){
+    document.getElementById('w-mail-detail').textContent = 'Could not reach /api/watchers/status';
+    document.getElementById('w-call-detail').textContent = 'Could not reach /api/watchers/status';
+  }
+}
+
+const WATCHER_BADGE_STYLES = {
+  running:  {cls:'b-success', dot:'var(--success)', label:'Running'},
+  starting: {cls:'b-info',    dot:'var(--info)',    label:'Starting'},
+  disabled: {cls:'b-neutral', dot:'var(--text-3)',  label:'Off'},
+  error:    {cls:'b-danger',  dot:'var(--danger)',  label:'Error'},
+};
+
+function renderMailWatcher(w){
+  if(!w) return;
+  const badge = document.getElementById('w-mail-badge');
+  const detail = document.getElementById('w-mail-detail');
+  const statsBox = document.getElementById('w-mail-stats');
+  const form = document.getElementById('w-mail-form');
+  const running = document.getElementById('w-mail-running');
+  const s = WATCHER_BADGE_STYLES[w.state] || WATCHER_BADGE_STYLES.disabled;
+  badge.className = 'badge ' + s.cls;
+  badge.innerHTML = `<span class="badge-dot-only" style="background:${s.dot}"></span>${s.label}`;
+  detail.textContent = w.detail || '';
+
+  const isActive = w.state === 'running' || w.state === 'starting';
+  form.style.display = isActive ? 'none' : '';
+  running.style.display = isActive ? '' : 'none';
+
+  if(w.state === 'running' && w.stats && Object.keys(w.stats).length){
+    statsBox.style.display = '';
+    document.getElementById('w-mail-checked').textContent = w.stats.checked ?? 0;
+    document.getElementById('w-mail-phishing').textContent = w.stats.phishing_found ?? 0;
+    document.getElementById('w-mail-last').textContent = w.last_activity ? new Date(w.last_activity).toLocaleTimeString() : '—';
+  } else {
+    statsBox.style.display = 'none';
+  }
+}
+
+function renderCallMonitor(w){
+  if(!w) return;
+  const badge = document.getElementById('w-call-badge');
+  const detail = document.getElementById('w-call-detail');
+  const statsBox = document.getElementById('w-call-stats');
+  const btn = document.getElementById('w-call-toggle-btn');
+  const s = WATCHER_BADGE_STYLES[w.state] || WATCHER_BADGE_STYLES.disabled;
+  badge.className = 'badge ' + s.cls;
+  badge.innerHTML = `<span class="badge-dot-only" style="background:${s.dot}"></span>${s.label}`;
+  detail.textContent = w.detail || '';
+
+  const isActive = w.state === 'running' || w.state === 'starting';
+  if(isActive){
+    btn.className = 'btn btn-secondary';
+    btn.style.width = '100%'; btn.style.justifyContent = 'center';
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg> Stop call monitoring';
+  } else {
+    btn.className = 'btn btn-primary';
+    btn.style.width = '100%'; btn.style.justifyContent = 'center';
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg> Enable call monitoring';
+  }
+
+  if(w.state === 'running' && w.stats && Object.keys(w.stats).length){
+    statsBox.style.display = '';
+    document.getElementById('w-call-audio').textContent = w.stats.audio_updates ?? 0;
+    document.getElementById('w-call-video').textContent = w.stats.video_updates ?? 0;
+    document.getElementById('w-call-high').textContent = w.stats.high_risk_calls ?? 0;
+    document.getElementById('w-call-last').textContent = w.last_activity ? new Date(w.last_activity).toLocaleTimeString() : '—';
+  } else {
+    statsBox.style.display = 'none';
+  }
+}
+
+async function startMailWatcher(){
+  const host = document.getElementById('w-mail-host').value.trim();
+  const user = document.getElementById('w-mail-user').value.trim();
+  const password = document.getElementById('w-mail-password').value;
+  if(!host || !user || !password){
+    toast('Fill in host, email, and app password', 'danger');
+    return;
+  }
+  try {
+    const r = await fetch('/api/watchers/mail/start', {
+      method: 'POST', headers: {...AUTH_HEADERS, 'Content-Type':'application/json'},
+      body: JSON.stringify({host, user, password, remember: true})
+    });
+    const d = await r.json();
+    if(!r.ok){ toast(d.detail || 'Could not start mail watcher', 'danger'); return; }
+    document.getElementById('w-mail-password').value = '';
+    toast('Mail watcher starting…', 'success');
+    setTimeout(loadWatcherStatus, 1500);
+  } catch(e){ toast('Request failed: ' + e.message, 'danger'); }
+}
+
+async function stopMailWatcher(){
+  try {
+    await fetch('/api/watchers/mail/stop', {method:'POST', headers: AUTH_HEADERS});
+    toast('Mail watcher stopped');
+    loadWatcherStatus();
+  } catch(e){ toast('Request failed: ' + e.message, 'danger'); }
+}
+
+async function forgetMailConfig(){
+  if(!confirm('Stop watching and forget the saved mailbox credentials? You will need to re-enter them to start again.')) return;
+  try {
+    await fetch('/api/watchers/mail/config', {method:'DELETE', headers: AUTH_HEADERS});
+    toast('Mailbox forgotten');
+    document.getElementById('w-mail-host').value = 'imap.gmail.com';
+    document.getElementById('w-mail-user').value = '';
+    loadWatcherStatus();
+  } catch(e){ toast('Request failed: ' + e.message, 'danger'); }
+}
+
+// ═══ Extra email sources (Gmail sign-in, drop-folder, .eml upload, notifications) ═══
+function setSourceBadge(id, state){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const s = WATCHER_BADGE_STYLES[state] || WATCHER_BADGE_STYLES.disabled;
+  el.className = 'badge ' + s.cls;
+  el.innerHTML = `<span class="badge-dot-only" style="background:${s.dot}"></span>${s.label}`;
+}
+function srcActive(w){ return !!w && (w.state === 'running' || w.state === 'starting'); }
+function srcShow(id, on){ const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; }
+
+let _sourcesLast = null;
+async function loadSourcesStatus(){
+  try {
+    const r = await fetch('/api/sources/status', {headers: AUTH_HEADERS});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    _sourcesLast = d;
+    renderGmailSource(d.sources && d.sources.gmail_watcher, d.gmail || {});
+    renderFolderSource(d.sources && d.sources.folder_watcher, d.folder || {});
+    renderNotifSource(d.sources && d.sources.notification_watcher);
+  } catch(e){
+    ['w-gmail-detail','w-folder-detail','w-notif-detail'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = (e.message === 'HTTP 404')
+        ? 'Email sources are not switched on in the server yet. Run: python tools/enable_email_sources.py  then restart the app.'
+        : 'Email-source service not available (' + e.message + ')';
+    });
+  }
+}
+
+function renderGmailSource(w, g){
+  setSourceBadge('w-gmail-badge', w ? w.state : 'disabled');
+  const detail = document.getElementById('w-gmail-detail');
+  let msg = w && w.detail ? w.detail : '';
+  if(!g.client_configured) msg = 'Not set up — save your Google client ID first (one time).';
+  else if(!g.connected) msg = 'Client saved. Sign in with Google to start.';
+  detail.textContent = msg;
+  srcShow('w-gmail-setup', !g.client_configured);
+  srcShow('w-gmail-signin', g.client_configured && !g.connected);
+  srcShow('w-gmail-connected', !!g.connected);
+  const active = srcActive(w);
+  const btn = document.getElementById('w-gmail-toggle');
+  if(btn) btn.textContent = active ? 'Stop watching' : 'Start watching';
+  const showStats = !!g.connected && w && w.stats && Object.keys(w.stats).length;
+  srcShow('w-gmail-stats', !!showStats);
+  if(showStats){
+    document.getElementById('w-gmail-account').textContent = g.email || '—';
+    document.getElementById('w-gmail-checked').textContent = w.stats.checked ?? 0;
+    document.getElementById('w-gmail-phishing').textContent = w.stats.phishing_found ?? 0;
+    document.getElementById('w-gmail-last').textContent = w.last_activity ? new Date(w.last_activity).toLocaleTimeString() : '—';
+  }
+}
+
+function renderFolderSource(w, f){
+  setSourceBadge('w-folder-badge', w ? w.state : 'disabled');
+  const active = srcActive(w);
+  let d = w && w.detail ? w.detail : '';
+  if(!active && f.path) d = (d ? d + ' · ' : '') + 'Folder: ' + f.path;
+  document.getElementById('w-folder-detail').textContent = d;
+  const inp = document.getElementById('w-folder-path');
+  if(inp && !inp.value && f.path) inp.placeholder = f.path;
+  const btn = document.getElementById('w-folder-toggle');
+  btn.textContent = active ? 'Stop watching folder' : 'Start watching folder';
+  btn.className = 'btn ' + (active ? 'btn-secondary' : 'btn-primary');
+}
+
+function renderNotifSource(w){
+  setSourceBadge('w-notif-badge', w ? w.state : 'disabled');
+  document.getElementById('w-notif-detail').textContent = w && w.detail ? w.detail : '';
+  const btn = document.getElementById('w-notif-toggle');
+  btn.textContent = srcActive(w) ? 'Stop notification watching' : 'Enable notification watching';
+}
+
+async function srcPost(url, body, method){
+  const opts = {method: method || 'POST', headers: {...AUTH_HEADERS}};
+  if(body !== undefined){ opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const r = await fetch(url, opts);
+  let d = {};
+  try { d = await r.json(); } catch(_){}
+  if(!r.ok) throw new Error(d.detail || ('HTTP ' + r.status));
+  return d;
+}
+
+async function saveGmailClient(){
+  const client_id = document.getElementById('w-gmail-client-id').value.trim();
+  const client_secret = document.getElementById('w-gmail-client-secret').value.trim();
+  if(!client_id || !client_secret){ toast('Enter both the client ID and the client secret', 'danger'); return; }
+  try {
+    await srcPost('/api/sources/gmail/config', {client_id, client_secret});
+    document.getElementById('w-gmail-client-secret').value = '';
+    toast('Google client saved', 'success');
+    loadSourcesStatus();
+  } catch(e){ toast(e.message, 'danger'); }
+}
+
+async function gmailSignIn(){
+  // Open the tab synchronously inside the click (an async window.open is
+  // blocked by popup blockers), then point it at Google once we have the URL.
+  const w = window.open('', '_blank');
+  srcShow('w-gmail-link-wrap', false);
+  try {
+    const d = await srcPost('/api/sources/gmail/connect');
+    if(w){
+      try { w.opener = null; } catch(_){}
+      w.location.href = d.auth_url;
+      toast('Finish signing in on the Google tab…');
+    } else {
+      const a = document.getElementById('w-gmail-link');
+      a.href = d.auth_url;
+      srcShow('w-gmail-link-wrap', true);
+      toast('Your browser blocked the pop-up — use the link below the button', 'danger');
+    }
+    // poll for up to 2 minutes so the card updates as soon as sign-in completes
+    let n = 0;
+    const t = setInterval(async () => {
+      n++; await loadSourcesStatus();
+      if((_sourcesLast && _sourcesLast.gmail && _sourcesLast.gmail.connected) || n > 40) clearInterval(t);
+    }, 3000);
+  } catch(e){
+    if(w){ try { w.close(); } catch(_){} }
+    toast(e.message, 'danger');
+  }
+}
+
+async function gmailToggle(){
+  const w = _sourcesLast && _sourcesLast.sources && _sourcesLast.sources.gmail_watcher;
+  try {
+    await srcPost(srcActive(w) ? '/api/sources/gmail/stop' : '/api/sources/gmail/start');
+    setTimeout(loadSourcesStatus, 1200);
+  } catch(e){ toast(e.message, 'danger'); }
+}
+
+async function gmailSignOut(){
+  if(!confirm('Sign out? NeuraShield will stop watching Gmail and revoke its access to your account.')) return;
+  try {
+    await srcPost('/api/sources/gmail', undefined, 'DELETE');
+    toast('Signed out of Google');
+    loadSourcesStatus();
+  } catch(e){ toast(e.message, 'danger'); }
+}
+
+async function gmailForgetClient(){
+  if(!confirm('Forget the saved Google client ID and secret?')) return;
+  try {
+    await srcPost('/api/sources/gmail?forget_client=true', undefined, 'DELETE');
+    loadSourcesStatus();
+  } catch(e){ toast(e.message, 'danger'); }
+}
+
+async function folderToggle(){
+  const w = _sourcesLast && _sourcesLast.sources && _sourcesLast.sources.folder_watcher;
+  try {
+    if(srcActive(w)){
+      await srcPost('/api/sources/folder/stop');
+      toast('Folder watcher stopped');
+    } else {
+      const path = document.getElementById('w-folder-path').value.trim();
+      await srcPost('/api/sources/folder/start', {path});
+      toast('Folder watcher starting…', 'success');
+    }
+    setTimeout(loadSourcesStatus, 1200);
+  } catch(e){ toast(e.message, 'danger'); }
+}
+
+async function notifToggle(){
+  const w = _sourcesLast && _sourcesLast.sources && _sourcesLast.sources.notification_watcher;
+  try {
+    if(srcActive(w)){
+      await srcPost('/api/sources/notifications/stop');
+      toast('Notification watcher stopped');
+    } else {
+      await srcPost('/api/sources/notifications/start');
+      toast('Notification watcher starting…', 'success');
+    }
+    setTimeout(loadSourcesStatus, 1500);
+  } catch(e){ toast(e.message, 'danger'); loadSourcesStatus(); }
+}
+
+async function scanEmlFile(){
+  const f = document.getElementById('w-eml-file').files[0];
+  const out = document.getElementById('w-eml-result');
+  if(!f){ toast('Choose an .eml file first', 'danger'); return; }
+  out.textContent = 'Scanning…';
+  const fd = new FormData();
+  fd.append('eml_file', f);
+  try {
+    const r = await fetch('/api/sources/eml/upload', {method:'POST', headers: {...AUTH_HEADERS}, body: fd});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail || ('HTTP ' + r.status));
+    out.textContent = (d.phishing ? 'PHISHING suspected' : 'Looks safe') +
+      ' · risk ' + (d.risk_score * 100).toFixed(0) + '% · ' + String(d.final_decision).replace('_', ' ');
+    out.style.color = d.phishing ? 'var(--danger)' : 'var(--success)';
+  } catch(e){
+    out.textContent = e.message;
+    out.style.color = 'var(--danger)';
+  }
+}
+
+async function toggleCallMonitor(){
+  try {
+    const r = await fetch('/api/watchers/status');
+    const d = await r.json();
+    const isActive = d.call_monitor.state === 'running' || d.call_monitor.state === 'starting';
+    const endpoint = isActive ? '/api/watchers/call/stop' : '/api/watchers/call/start';
+    const resp = await fetch(endpoint, {method:'POST', headers: AUTH_HEADERS});
+    const rd = await resp.json();
+    if(!resp.ok){ toast(rd.detail || 'Request failed', 'danger'); return; }
+    toast(isActive ? 'Call monitor stopping…' : 'Call monitor starting…', 'success');
+    setTimeout(loadWatcherStatus, 1500);
+  } catch(e){ toast('Request failed: ' + e.message, 'danger'); }
+}
+
+// ═══ Live threat notification banner ═══
+let bannerQueue = [];
+let bannerCurrentId = null;
+
+async function pollUnacknowledgedAlerts(){
+  try {
+    const r = await fetch('/api/alerts/unacknowledged', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    bannerQueue = d.alerts || [];
+    renderBanner();
+  } catch(e){ /* silent - banner just won't update this cycle */ }
+}
+
+function renderBanner(){
+  const host = document.getElementById('threat-banner-host');
+  if(!bannerQueue.length){
+    host.innerHTML = '';
+    bannerCurrentId = null;
+    return;
+  }
+  const a = bannerQueue[0];
+  if(a.alert_id === bannerCurrentId) return;   // already showing this one, don't re-render/reset expand state
+  bannerCurrentId = a.alert_id;
+
+  const isHigh = a.final_decision === 'HIGH_RISK';
+  const g = a.guidance || {title:'Content flagged', summary:'', dos:[], donts:[]};
+  const moreCount = bannerQueue.length - 1;
+
+  host.innerHTML = `
+    <div class="threat-banner ${isHigh ? 'high' : 'medium'}">
+      <div class="tb-main">
+        <div class="tb-icon">
+          <svg viewBox="0 0 24 24"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+        </div>
+        <div class="tb-body">
+          <div class="tb-title">${esc(g.title)}${moreCount > 0 ? ` <span class="tb-more-count">+${moreCount} more</span>` : ''}</div>
+          <div class="tb-summary">${esc(g.summary)}</div>
+          <div class="tb-actions">
+            <button class="btn btn-secondary btn-sm" onclick="toggleBannerDetail()">See more</button>
+            <button class="btn btn-primary btn-sm" onclick="acknowledgeCurrentBannerAlert()">Acknowledge</button>
+          </div>
+          <div class="tb-detail" id="tb-detail" style="display:none">
+            <div class="tb-detail-col">
+              <div class="tb-detail-label">Do</div>
+              <ul>${(g.dos||[]).map(d=>`<li>${esc(d)}</li>`).join('')}</ul>
+            </div>
+            <div class="tb-detail-col">
+              <div class="tb-detail-label">Don't</div>
+              <ul>${(g.donts||[]).map(d=>`<li>${esc(d)}</li>`).join('')}</ul>
+            </div>
+          </div>
+        </div>
+        <div class="tb-score">
+          <div class="tb-score-num">${(a.final_risk_score*100).toFixed(0)}%</div>
+          <div class="tb-score-label">risk</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleBannerDetail(){
+  const el = document.getElementById('tb-detail');
+  if(el) el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function acknowledgeCurrentBannerAlert(){
+  if(!bannerCurrentId) return;
+  const id = bannerCurrentId;
+  try {
+    const r = await fetch(`/api/alerts/${id}/acknowledge`, {
+      method: 'POST', headers: {...AUTH_HEADERS, 'Content-Type':'application/json'},
+      body: JSON.stringify({note: 'Acknowledged from dashboard banner'})
+    });
+    if(!r.ok){ toast('Could not acknowledge — try again', 'danger'); return; }
+    toast('Acknowledged — this is recorded in the audit log', 'success');
+    bannerCurrentId = null;
+    pollUnacknowledgedAlerts();
+  } catch(e){ toast('Request failed: ' + e.message, 'danger'); }
+}
+
+pollUnacknowledgedAlerts();
+setInterval(pollUnacknowledgedAlerts, 6000);
+
+// ═══ Live call monitor status strip (Analyse Content screen) ═══
+const DECISION_BADGE_STYLES = {
+  HIGH_RISK:   {cls:'b-danger',  dot:'var(--danger)'},
+  MEDIUM_RISK: {cls:'b-warning', dot:'var(--warning)'},
+  LOW_RISK:    {cls:'b-success', dot:'var(--success)'},
+};
+async function pollLiveCallStrip(){
+  try {
+    const r = await fetch('/api/watchers/status', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    const cm = d.call_monitor;
+    const strip = document.getElementById('live-call-strip');
+    if(!cm || cm.state !== 'running'){
+      strip.style.display = 'none';
+      return;
+    }
+    strip.style.display = '';
+    const stats = cm.stats || {};
+    const dec = stats.last_decision;
+    const score = stats.last_risk_score;
+    const badge = document.getElementById('live-call-badge');
+    const detail = document.getElementById('live-call-detail');
+    const dot = document.getElementById('live-call-dot');
+    if(dec && DECISION_BADGE_STYLES[dec]){
+      const s = DECISION_BADGE_STYLES[dec];
+      badge.className = 'badge ' + s.cls;
+      badge.innerHTML = `<span class="badge-dot-only" style="background:${s.dot}"></span>${dec.replace('_',' ')}${typeof score==='number' ? ' · '+(score*100).toFixed(0)+'%' : ''}`;
+      dot.style.background = s.dot;
+    } else {
+      badge.className = 'badge b-neutral';
+      badge.innerHTML = '<span class="badge-dot-only"></span>Monitoring…';
+      dot.style.background = 'var(--success)';
+    }
+    detail.textContent = `${stats.audio_updates||0} audio checks · ${stats.video_updates||0} video checks · ${stats.high_risk_calls||0} high-risk detected`;
+  } catch(e){ /* silent, non-critical widget */ }
+}
+pollLiveCallStrip();
+setInterval(pollLiveCallStrip, 4000);
+
+// ═══ Alerts ═══
+async function loadAlerts(){
+  const list = document.getElementById('alert-list');
+  list.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const r = await fetch('/api/alerts?limit=25', {headers: AUTH_HEADERS});
+    const d = await r.json();
+    if(!d.alerts || !d.alerts.length){
+      list.innerHTML = '<div class="empty-state">No alerts yet. Run an analysis to generate one.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    d.alerts.forEach(a => {
+      if(!a.final_decision) return;   // defensive: skip any malformed/non-detection record
+      const cls = a.final_decision === 'HIGH_RISK' ? 'high' : a.final_decision === 'MEDIUM_RISK' ? 'medium' : 'low';
+      const dotColor = cls === 'high' ? 'var(--danger)' : cls === 'medium' ? 'var(--warning)' : 'var(--success)';
+      const t = a.timestamp ? new Date(a.timestamp).toLocaleString() : '—';
+      const score = typeof a.final_risk_score === 'number' ? (a.final_risk_score*100).toFixed(1) : '—';
+      list.insertAdjacentHTML('beforeend', `
+        <div class="alert-item">
+          <div class="badge-dot-only" style="background:${dotColor}"></div>
+          <div class="a-decision ${cls}">${a.final_decision.replace(/_/g,' ')}</div>
+          <div class="a-score">risk ${score}%</div>
+          <div class="a-time">${t}</div>
+        </div>`);
+    });
+  } catch(e){
+    list.innerHTML = '<div class="empty-state" style="color:var(--danger)">Could not load alerts</div>';
+  }
+}
+
+// ═══ Run analysis ═══
+async function runAnalysis(){
+  const spin = document.getElementById('spin');
+  const empty = document.getElementById('empty');
+  const resPanel = document.getElementById('result-panel');
+  const jsonCard = document.getElementById('json-card');
+  spin.classList.add('show');
+  empty.style.display = 'none';
+  resPanel.style.display = 'none';
+  jsonCard.style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    if(activeTab === 'text'){
+      const txt = document.getElementById('email-text').value.trim();
+      if(!txt){ throw new Error('Enter email content to analyse'); }
+      fd.append('email_text', txt);
+    } else if(activeTab === 'video'){
+      const f = document.getElementById('video-file').files[0];
+      if(!f){ throw new Error('Select a video file'); }
+      fd.append('video_file', f);
+    } else if(activeTab === 'audio'){
+      const f = document.getElementById('audio-file').files[0];
+      if(!f){ throw new Error('Select an audio file'); }
+      fd.append('audio_file', f);
+    } else {
+      fd.append('email_text', document.getElementById('all-text').value);
+      const vf = document.getElementById('all-video').files[0];
+      const af = document.getElementById('all-audio').files[0];
+      if(vf) fd.append('video_file', vf);
+      if(af) fd.append('audio_file', af);
+      if(!fd.get('email_text') && !vf && !af){ throw new Error('Provide at least one input'); }
+    }
+    const resp = await fetch('/api/analyse', {method:'POST', body:fd, headers: AUTH_HEADERS});
+    if(!resp.ok){
+      const err = await resp.json().catch(() => ({detail:'server error '+resp.status}));
+      throw new Error(err.detail || 'server error');
+    }
+    const data = await resp.json();
+    renderResult(data);
+    updateStats();
+    if(data.final_decision === 'HIGH_RISK') toast('High-risk content — alert dispatched to Layer 4', 'danger');
+    else if(data.final_decision === 'MEDIUM_RISK') toast('Medium-risk flagged for review', 'success');
+  } catch(e){
+    empty.style.display = '';
+    empty.innerHTML = `<div style="color:var(--danger);font-weight:600;margin-bottom:6px">Analysis failed</div><div style="font-size:12px;color:var(--text-2)">${e.message}</div>`;
+  } finally {
+    spin.classList.remove('show');
+  }
+}
+
+// ═══ Render result ═══
+const ICONS = {
+  high: '<svg viewBox="0 0 24 24"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>',
+  medium: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
+  low: '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>'
+};
+
+function renderResult(data){
+  const risk = data.final_risk_score;
+  const dec = data.final_decision;
+  const cls = dec === 'HIGH_RISK' ? 'high' : dec === 'MEDIUM_RISK' ? 'medium' : 'low';
+
+  document.getElementById('verdict').className = 'verdict ' + cls;
+  document.getElementById('v-icon').innerHTML = ICONS[cls];
+  document.getElementById('v-label').textContent = dec.replace(/_/g,' ');
+
+  // Human guidance
+  const mods = data.modality_scores || {};
+  const threats = [];
+  if(mods.text && (mods.text.prediction === 'phishing' || mods.text.prediction === 'fake')) threats.push('phishing email content');
+  if(mods.video && mods.video.prediction === 'fake') threats.push('deepfake video');
+  if(mods.audio && mods.audio.prediction === 'fake') threats.push('synthetic / cloned audio');
+
+  let guidance;
+  if(dec === 'HIGH_RISK' || dec === 'MEDIUM_RISK'){
+    guidance = threats.length ? ('Detected: ' + threats.join(', ') + '. ') : '';
+    if(mods.text && mods.text.prediction === 'phishing') guidance += 'Do not click links or make payments; verify sender through another channel. ';
+    if(mods.video && mods.video.prediction === 'fake') guidance += 'Do not trust this video call/recording. ';
+    if(mods.audio && mods.audio.prediction === 'fake') guidance += 'Do not follow voice instructions for money or credentials. ';
+    guidance += 'Alert dispatched to Layer 4 (Zero-Trust).';
+  } else {
+    guidance = 'No significant content threat detected. Content appears safe.';
+  }
+  document.getElementById('v-rec').textContent = guidance;
+  document.getElementById('v-score-num').textContent = (risk*100).toFixed(1) + '%';
+  document.getElementById('request-id').textContent = data.request_id || '';
+  document.getElementById('result-sub').textContent = `${data.processing_time_ms}ms · ${(data.modalities_used||[]).join(', ') || 'none'}`;
+
+  // Combined bar
+  const pct = (risk*100).toFixed(1) + '%';
+  document.getElementById('v-pct').textContent = pct;
+  const bar = document.getElementById('v-bar');
+  bar.style.width = pct;
+  bar.className = 'bar-fill ' + (risk >= 0.65 ? 'fill-danger' : risk >= 0.40 ? 'fill-warning' : 'fill-success');
+
+  // Modality cards
+  const grid = document.getElementById('mod-grid');
+  grid.innerHTML = '';
+  [{k:'text',n:'Email'},{k:'video',n:'Video'},{k:'audio',n:'Audio'}].forEach(m => {
+    const s = data.modality_scores[m.k];
+    if(!s) return;
+    const isUnknown = s.prediction === 'unknown' || s.prediction === 'error';
+    const isFake = s.prediction === 'fake' || s.prediction === 'phishing';
+    const predCls = isUnknown ? 'unkn' : isFake ? 'fake' : 'real';
+    const predTxt = isUnknown ? 'Not analysed' : isFake ? 'Threat detected' : 'Appears legitimate';
+    const badgeCls = isUnknown ? 'b-neutral' : isFake ? 'b-danger' : 'b-success';
+    const barCls = isUnknown ? 'fill-muted' : s.risk_score >= 0.65 ? 'fill-danger' : s.risk_score >= 0.40 ? 'fill-warning' : 'fill-success';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="mod">
+        <div class="mod-top">
+          <span class="mod-name">${m.n}</span>
+          <span class="badge ${badgeCls}">${s.prediction || 'unknown'}</span>
+        </div>
+        <div class="mod-pred ${predCls}">${predTxt}</div>
+        <div class="bar-row"><span>Risk</span><span>${(s.risk_score*100).toFixed(1)}%</span></div>
+        <div class="bar" style="margin-bottom:8px"><div class="bar-fill ${barCls}" style="width:${s.risk_score*100}%"></div></div>
+        <div class="bar-row"><span>Confidence</span><span>${(s.confidence*100).toFixed(1)}%</span></div>
+        <div class="bar"><div class="bar-fill fill-info" style="width:${s.confidence*100}%;opacity:.55"></div></div>
+      </div>`);
+  });
+
+  document.getElementById('proc-time').textContent = `Processed in ${data.processing_time_ms}ms · request ${data.request_id || ''}`;
+
+  lastJson = JSON.stringify(data, null, 2);
+  document.getElementById('json-out').textContent = lastJson;
+  document.getElementById('json-card').style.display = '';
+  document.getElementById('result-panel').style.display = '';
+}
+
+function copyJson(){
+  navigator.clipboard.writeText(lastJson).then(() => toast('JSON copied to clipboard', 'success'));
+}
+
+function refreshAll(){
+  updateStats();
+  loadHealth();
+  if(document.getElementById('view-alerts').classList.contains('active')) loadAlerts();
+  toast('Refreshed');
+}
+</script>
+</body>
+</html>

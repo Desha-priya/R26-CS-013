@@ -1,0 +1,111 @@
+# NeuraShield - Ransomware Killer (Layer 2) - Configuration
+#
+# SECRETS ARE NOT STORED HERE. Set them as environment variables:
+#   NEURASHIELD_HMAC_SECRET   shared signing secret (all layers must use the same one)
+#   NEURASHIELD_API_KEY       API key of the main platform
+#   NEURASHIELD_PLATFORM_URL  origin of the main platform, e.g. http://localhost:8000
+
+dataset:
+  raw_path: "data/raw/CIC-MalMem-2022.csv"
+  processed_path: "data/processed/cleaned_features.csv"
+  label_column: "Class"          # Benign / Malware
+  category_column: "Category"    # subtype, e.g. Ransomware-*, Trojan-*, Spyware-*
+  drop_columns: ["Filename"]
+  test_size: 0.2
+  random_state: 42
+
+isolation_forest:
+  n_estimators: 200
+  contamination: 0.15
+  max_samples: "auto"
+  random_state: 42
+  model_path: "models/isolation_forest.pkl"
+
+random_forest:
+  n_estimators: 300
+  max_depth: 20
+  min_samples_split: 4
+  class_weight: "balanced"
+  random_state: 42
+  model_path: "models/classifier.pkl"
+
+scaler_path: "models/scaler.pkl"
+
+live_monitor:
+  watch_paths:
+    - "~/Documents"
+    - "~/Desktop"
+    - "~/Downloads"
+    - "~/Pictures"
+  # Extra folders/files to ignore (in addition to this program's own
+  # logs, queues, backups and Python __pycache__ files, which are always ignored).
+  ignore_paths: []
+  entropy_threshold: 7.2          # near-random data (encrypted) ~7.5-8.0 on 0-8 scale
+  file_rate_window_seconds: 5
+  confidence_alert_threshold: 0.90
+
+response:
+  # Confidence-tiered automated response:
+  #   >= kill_confidence_threshold  -> auto-kill + rollback
+  #   below it                      -> rollback + alert only, NO kill
+  kill_confidence_threshold: 0.95
+  rollback_confidence_threshold: 0.0   # effectively "always roll back once is_threat() fires"
+  auto_rollback: true
+  rollback_timeout_seconds: 5
+  # Cap on total backup storage across ALL files combined (default 5 GB).
+  max_backup_storage_mb: 5120
+  # After a detection, new backups are paused for this many seconds so that
+  # half-encrypted files are never saved over the clean copies.
+  backup_pause_seconds: 120
+  # After a detection, keep checking for this many seconds (ends early after 5 quiet
+  # seconds) and restore files an ongoing attack damages later.
+  containment_seconds: 60
+  # Extra process names that must NEVER be killed automatically (case
+  # does not matter). Core system processes are always protected already.
+  protected_processes: []
+
+alerting:
+  target_layer: "zero_trust_auth"
+  brain_endpoint: "local://brain/alert"   # placeholder for message queue / IPC
+  # Origin of the main platform (scheme + host + port, NO path). Leave empty
+  # to disable sending. The NEURASHIELD_PLATFORM_URL environment variable
+  # overrides this value.
+  platform_base_url: ""
+  # Only these severities are sent to the main platform. LOW stays local.
+  platform_alert_severities: ["MEDIUM", "HIGH", "CRITICAL"]
+  queue_rotation:
+    max_bytes: 5242880   # 5 MB
+    backup_count: 3
+
+security:
+  # Leave EMPTY. If neither the environment variable nor this value is set,
+  # a random key is generated on first start and stored in the runtime folder.
+  hmac_secret_key: ""
+  # A signed rollback command older than this is rejected (replay protection).
+  command_max_age_seconds: 60
+
+main:
+  # Protection (monitoring + backups) starts only after consent has been given
+  # (dashboard button, --consent, or the platform calling grant_consent()).
+  # Set to false ONLY if the platform's installer already showed the user the
+  # consent screen; NEURASHIELD_AUTO_CONSENT=1 does the same.
+  require_consent: true
+  # Backup policy. The first run copies every file once (baseline); after that only
+  # files the monitor saw change are copied. This is the practical replacement for a
+  # "copy before every write" trigger, which would need a kernel-level file-system
+  # filter driver. How often the backup queue is looked at (a polling tick, NOT the
+  # backup rate):
+  backup_interval_seconds: 2
+  # A changed file is backed up once it has been quiet for this many seconds
+  # (so a file that is still being written is not copied half-way) ...
+  backup_settle_seconds: 5
+  # ... and a given file is backed up at most once per this many seconds
+  # (so frequent saves do not flood the version history).
+  backup_min_interval_seconds: 30
+  # A slow full sweep that catches any change the file monitor missed.
+  full_sweep_seconds: 300
+  # How often (seconds) alert notices that could not reach the platform are retried.
+  outbox_retry_seconds: 30
+  # Resource targets from the proposal (CPU <5%, memory <50 MB).
+  cpu_target_percent: 5.0
+  memory_target_mb: 50.0

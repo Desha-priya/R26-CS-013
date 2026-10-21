@@ -1,0 +1,13 @@
+{
+  "event_type": "alert_acknowledged",
+  "acknowledged_alert_id": "alert_20261019_222006_080428",
+  "note": "Acknowledged from dashboard banner",
+  "timestamp": "2026-10-19T22:20:37.556534",
+  "snoozed_categories": [
+    "cloned_voice"
+  ],
+  "snoozed_until": "2026-10-19T22:25:37.556534",
+  "alert_id": "alert_20261019_222037_557299",
+  "_audit_prev_signature": "5803a766d5a52bd912d4fd8d977105c734800f84cbec1ea6450b53bec027e642",
+  "_audit_signature": "a979bc03dda6e67dd6ceb2141dc1d7aee9af279c6f731988b23b4d373456ae8d"
+}
