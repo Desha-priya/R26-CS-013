@@ -1,0 +1,36 @@
+# NeuraShield — Zero-Trust Platform (Layer 3 / core) RUNTIME requirements
+# CORRECTED to real, installable, mutually-compatible versions for Python 3.11
+# + CUDA 12.6. The previous pins (torch 2.13, tensorflow 2.21, numpy 2.4.6,
+# fastapi 0.141, …) do not exist and could not install.
+#
+# The runtime platform only needs torch for the Siamese BiLSTM; TensorFlow/Keras
+# were used ONLY by the training scripts under "modeling pip/" and are NOT
+# required to run the platform, so they are intentionally left out of the exe.
+
+# ---- PyTorch (Siamese BiLSTM behavioural model) ----------------------------
+torch==2.6.0
+torchvision==0.21.0
+
+# ---- Web service -----------------------------------------------------------
+fastapi==0.115.6
+uvicorn==0.32.1
+pydantic==2.9.2
+python-multipart==0.0.17
+
+# ---- Vision (face liveness via Haar cascades) ------------------------------
+opencv-python==4.10.0.84
+
+# ---- Core / shared ---------------------------------------------------------
+numpy==2.1.3
+requests==2.32.3
+
+# ---- Interactive agent + secrets -------------------------------------------
+pynput==1.7.7
+cryptography==43.0.3
+pywin32==308 ; sys_platform == "win32"
+
+# INSTALL (Windows, Python 3.11):
+#   1) python -m pip install --upgrade pip
+#   2) pip install torch==2.6.0 torchvision==0.21.0 \
+#          --index-url https://download.pytorch.org/whl/cu126
+#   3) pip install -r requirements.txt

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up · NeuraShield</title>
+<link rel="stylesheet" href="/static/app.css">
+<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("ns_theme")||"light");}catch(e){}})();</script>
+<style>
+  .setup-card{max-width:580px}
+  .consent-box{background:var(--paper);border:1px solid var(--rule-strong);border-radius:3px;
+    padding:16px 18px;max-height:260px;overflow:auto;margin:6px 0 4px}
+  .consent-box.consent-doc h3{font-size:13.5px}
+  .scroll-hint{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin:0 0 14px;
+    text-transform:uppercase;letter-spacing:.08em}
+  .setup-actions{display:flex;gap:10px}
+  .setup-actions .btn{flex:1}
+  .field select{width:100%;background:var(--paper);border:1px solid var(--rule-strong);
+    color:var(--ink);border-radius:3px;padding:11px 12px;font-size:14px;font-family:var(--sans);outline:none}
+  .field select:focus{border-color:var(--steel)}
+  .layer-pick{display:flex;flex-direction:column;gap:2px;border:1px solid var(--rule-strong);
+    border-radius:3px;overflow:hidden;margin-bottom:4px}
+  .pick{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border-bottom:1px solid var(--rule);cursor:pointer}
+  .pick:last-child{border-bottom:none}
+  .pick:hover{background:var(--paper)}
+  .pick input{margin-top:3px}
+  .pick span{display:flex;flex-direction:column;font-size:13.5px;color:var(--ink)}
+  .pick em{font-style:normal;font-size:12px;color:var(--ink-3);margin-top:1px}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <form class="auth-card setup-card" method="post" action="/setup" id="form">
+    <div class="brand-row">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z" stroke="#1f5f8b" stroke-width="1.8" fill="rgba(31,95,139,.07)"/>
+        <path d="M16 10v7M16 20.5v.5" stroke="#1f5f8b" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NeuraShield</span>
+      <span class="brand-sub">First run</span>
+    </div>
+    <div class="auth-title">Create the administrator account</div>
+    <p class="auth-sub">This account controls every layer on this computer. Read the consent &amp; privacy notice, then accept to finish setup.</p>
+    <div class="auth-err" id="err"></div>
+
+    <div class="field"><label for="u">Administrator username</label>
+      <input id="u" name="username" autocomplete="username" required autofocus></div>
+    <div class="field"><label for="p">Password</label>
+      <input id="p" name="password" type="password" autocomplete="new-password" required minlength="8"></div>
+    <div class="field"><label for="p2">Confirm password</label>
+      <input id="p2" type="password" autocomplete="new-password" required minlength="8"></div>
+
+    <label style="display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+      margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em">Account recovery — two security questions</label>
+    <p class="scroll-hint" style="margin:0 0 10px;text-transform:none;letter-spacing:0">If you forget your password, answering both questions lets you set a new one. Answers are stored protected, not in plain text.</p>
+    <div class="field"><label for="q1">Security question 1</label>
+      <select id="q1" name="q1" required>
+        <option value="">Choose a question…</option>
+        <option>What was the name of your first school?</option>
+        <option>What is your mother's maiden name?</option>
+        <option>What was the name of your first pet?</option>
+        <option>In what city were you born?</option>
+        <option>What was the model of your first phone?</option>
+      </select></div>
+    <div class="field"><label for="a1">Answer 1</label>
+      <input id="a1" name="a1" autocomplete="off" required></div>
+    <div class="field"><label for="q2">Security question 2</label>
+      <select id="q2" name="q2" required>
+        <option value="">Choose a question…</option>
+        <option>What was your childhood nickname?</option>
+        <option>What is the name of your favourite teacher?</option>
+        <option>What street did you grow up on?</option>
+        <option>What was your first employer?</option>
+        <option>What is your favourite book?</option>
+      </select></div>
+    <div class="field"><label for="a2">Answer 2</label>
+      <input id="a2" name="a2" autocomplete="off" required></div>
+
+    <label style="display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+      margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em">Choose what to protect</label>
+    <div class="layer-pick">
+      <label class="pick"><input type="checkbox" name="L_zta" checked>
+        <span><strong>Zero-Trust Authentication</strong><em>Verifies it's still you after login (recommended)</em></span></label>
+      <label class="pick"><input type="checkbox" name="L_ransomware">
+        <span><strong>Ransomware Killer</strong><em>Detects and rolls back ransomware</em></span></label>
+      <label class="pick"><input type="checkbox" name="L_content">
+        <span><strong>Content Threat Detection</strong><em>Phishing, deepfake &amp; voice-spoof screening</em></span></label>
+      <label class="pick"><input type="checkbox" name="L_network">
+        <span><strong>Network Guardian</strong><em>Network anomaly detection (needs Npcap + admin)</em></span></label>
+    </div>
+
+    <label style="display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+      margin:14px 0 6px;text-transform:uppercase;letter-spacing:.1em">Consent &amp; privacy notice</label>
+    <div class="consent-box consent-doc" id="consentBox"><!--CONSENT_NOTICE--></div>
+    <p class="scroll-hint">Scroll to read the full notice before accepting.</p>
+
+    <input type="hidden" name="consent" id="consentField" value="">
+    <div class="setup-actions">
+      <button class="btn ghost" type="button" id="declineBtn">Decline</button>
+      <button class="btn" type="submit" id="acceptBtn">Accept &amp; create account</button>
+    </div>
+    <p class="auth-hint">Password must be at least 8 characters, and both security questions must be answered. Declining means nothing is monitored; you can accept later from the console.</p>
+  </form>
+</div>
+<script>
+const f=document.getElementById('form'), err=document.getElementById('err');
+document.getElementById('declineBtn').onclick = ()=>{
+  // create the account but record no consent — platform stays in standby
+  document.getElementById('consentField').value='0';
+  if(validate()) f.submit();
+};
+function validate(){
+  err.classList.remove('show');
+  if(!f.username.value.trim()){ err.textContent='Enter a username'; err.classList.add('show'); return false; }
+  if(f.password.value.length<8){ err.textContent='Password must be at least 8 characters'; err.classList.add('show'); return false; }
+  if(f.password.value!==document.getElementById('p2').value){ err.textContent='Passwords do not match'; err.classList.add('show'); return false; }
+  if(!f.q1.value||!f.q2.value){ err.textContent='Choose both security questions'; err.classList.add('show'); return false; }
+  if(f.q1.value===f.q2.value){ err.textContent='Pick two different security questions'; err.classList.add('show'); return false; }
+  if(!f.a1.value.trim()||!f.a2.value.trim()){ err.textContent='Answer both security questions'; err.classList.add('show'); return false; }
+  return true;
+}
+f.addEventListener('submit', async e=>{
+  e.preventDefault();
+  if(!document.getElementById('consentField').value) document.getElementById('consentField').value='1';
+  if(!validate()){ document.getElementById('consentField').value=''; return; }
+  const r=await fetch('/setup',{method:'POST',body:new FormData(f),redirect:'manual'});
+  if(r.type==='opaqueredirect'||r.status===0||r.ok){ location.href='/login'; return; }
+  let msg='Could not create the account';
+  try{ const j=await r.json(); if(j.detail) msg=j.detail; }catch(_){}
+  err.textContent=msg; err.classList.add('show');
+  document.getElementById('consentField').value='';
+});
+</script>
+</body>
+</html>

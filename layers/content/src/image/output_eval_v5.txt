@@ -1,0 +1,70 @@
+     
+          scored 240/241 ...
+     [div255/as_is] acc=28.22%  auc=0.132  eer=79.66%
+     [div255/flipped] acc=71.78%  auc=0.868  eer=20.34%
+
+
+     ---------------------
+     
+     scored 240/241 ...
+     [mobilenet/as_is] acc=25.31%  auc=0.137  eer=81.89%
+     [mobilenet/flipped] acc=74.69%  auc=0.863  eer=18.11%
+
+================================================================
+  RESOLVED CONFIGURATION (empirically verified)
+================================================================
+  Correct preprocessing : mobilenet
+  Correct label mapping : risk = 1.0 - raw_output
+    -> In predict_video(), use fake_probs = 1.0 - raw_preds
+----------------------------------------------------------------
+  Test clips   : 241
+  Accuracy     : 74.69%
+  Precision    : 96.15%
+  Recall       : 56.39%
+  F1           : 71.09%
+  ROC-AUC      : 0.8632
+  EER          : 18.11%  (threshold 0.0355)
+  Confusion    : TN=105 FP=3 FN=58 TP=75
+================================================================
+
+
+
+facecrop result==
+---------
+
+================================================================
+  RESULTS — Face-Crop Preprocessing
+================================================================
+  Test clips        : 241
+  Clips w/ no face detected (used full frame fallback): 1
+  Accuracy @0.5      : 84.23%
+  Precision          : 89.26%
+  Recall (catches fakes): 81.20%   <-- compare to 56.39% baseline
+  F1                 : 85.04%
+  ROC-AUC            : 0.9272
+  EER                : 15.68%  (threshold 0.4176)
+  Confusion          : TN=95 FP=13 FN=25 TP=108
+================================================================
+
+  --- Interpretation ---
+  Compare RECALL above to the eval_video.py baseline (56.39%).
+  If recall improved meaningfully (e.g. +10pp or more):
+    -> face-crop was a real preprocessing gap. Adopt face-crop
+       in predict_video() (multimodal_fusion_v5.py) permanently.
+  If recall is similar or worse:
+    -> the gap isn't preprocessing — it's the model itself.
+       Report both experiments honestly in the dissertation as
+       evidence of a genuine limitation, and note it as future work
+       (e.g. fine-tune on more diverse manipulation types).
+Traceback (most recent call last):
+  File "image\eval_video_facecrop.py", line 225, in <module>
+    main()
+  File "image\eval_video_facecrop.py", line 220, in main
+    (OUT_DIR / f"video_facecrop_eval_{stamp}.json").write_text(json.dumps(payload, indent=2))
+  File "\AppData\Local\Programs\Python\Python311\Lib\pathlib.py", line 1078, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "\AppData\Local\Programs\Python\Python311\Lib\pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data\\video\\eval\\video_facecrop_eval_20260820_213231.json'

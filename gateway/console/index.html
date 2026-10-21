@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuraShield Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z' fill='%231f5f8b'/%3E%3Cpath d='M16 10v7M16 20.5v.5' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true" style="width:24px;height:24px">
+    <path d="M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z" stroke="#1f5f8b" stroke-width="1.8" fill="rgba(31,95,139,.07)"/>
+    <path d="M16 10v7M16 20.5v.5" stroke="#1f5f8b" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+  <span class="brand-name">NeuraShield</span>
+  <span class="brand-sub">R26·CS·013</span>
+  <div class="threat-pill low" id="threatPill"><span class="dot"></span><span id="threatText">Secure</span></div>
+  <div class="spacer"></div>
+  <button class="icon-btn icon-only" id="themeBtn" title="Toggle light / dark" aria-label="Toggle theme">
+    <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+  </button>
+  <button class="icon-btn" id="tourBtn" title="Take the tour">Guide</button>
+  <div class="user-chip"><span id="userName">—</span></div>
+  <form method="post" action="/logout" style="margin:0"><button class="icon-btn" type="submit">Sign out</button></form>
+</header>
+
+<div class="layout">
+  <nav class="nav" id="nav">
+    <div class="nav-sep">Operations</div>
+    <button data-view="overview" class="active" id="nav-overview"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
+    <button data-view="layers" id="nav-layers"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 13l9 5 9-5M3 18l9 5 9-5" opacity=".5"/></svg>Layers</button>
+    <button data-view="alerts" id="nav-alerts"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a6 6 0 0 0-6 6c0 5-2 7-2 7h16s-2-2-2-7a6 6 0 0 0-6-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>Alerts<span class="nav-badge" id="alertBadge" hidden>0</span></button>
+    <button data-view="incidents" id="nav-incidents"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5Z"/><path d="M12 8v4M12 15v.5"/></svg>Incidents</button>
+
+    <div class="nav-sep">Layer dashboards</div>
+    <div id="layerNav"></div>
+
+    <div class="nav-sep">Governance</div>
+    <button data-view="consent" id="nav-consent"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Consent</button>
+    <button data-view="audit" id="nav-audit"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1" opacity=".4"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Audit log</button>
+    <button data-view="settings" id="nav-settings"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 .3-1.8" opacity=".9"/></svg>Settings</button>
+    <button data-view="about" id="nav-about"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.4"/></svg>About</button>
+  </nav>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section class="view active" id="view-overview">
+      <div class="view-head ov-head">
+        <div><h2>Security overview</h2><p>Live operating state of the NeuraShield platform on this computer.</p></div>
+        <div class="quick-actions">
+          <button class="qa-btn" id="qaSelfCheck" title="Run a quick health check">Self-check</button>
+          <button class="qa-btn" id="qaExport" title="Export the audit log">Export audit</button>
+          <button class="qa-btn danger" id="qaPause" title="Pause all monitoring">Pause all</button>
+        </div>
+      </div>
+      <div id="attentionBanner"></div>
+      <div id="selfcheckResult"></div>
+      <div id="consentBanner"></div>
+
+      <div class="hero standby" id="heroBanner">
+        <div class="hero-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z" stroke="currentColor" stroke-width="1.8" fill="currentColor" fill-opacity=".08"/><path id="heroGlyph" d="m10.5 16.5 4 4 7-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="hero-text"><div class="hero-title" id="heroTitle">Checking protection…</div><div class="hero-sub" id="heroSub">Connecting to the platform.</div></div>
+        <div class="hero-meta">
+          <div><b id="heroLayers">—</b><span>layers active</span></div>
+          <div><b id="heroAlerts">—</b><span>open alerts</span></div>
+        </div>
+      </div>
+
+      <div class="risk-panel" id="riskPanel">
+        <div class="risk-main">
+          <div class="risk-top">
+            <span class="panel-title">Overall security risk</span>
+            <span class="risk-decision" id="riskDecision">—</span>
+          </div>
+          <div class="risk-number"><span id="riskPct">—</span><span class="risk-unit">%</span></div>
+          <div class="risk-track" id="riskTrack">
+            <div class="risk-fill" id="riskFill"></div>
+            <div class="risk-threshold" id="riskThreshold"><span class="risk-threshold-label">step-up</span></div>
+          </div>
+          <div class="risk-sub" id="riskSub">Zero-Trust live session risk</div>
+        </div>
+        <div class="risk-breakdown" id="riskBreakdown"></div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-label">Protection</div><div class="stat-value steel" id="ovPosture">—</div><div class="stat-sub" id="ovPostureSub">checking…</div></div>
+        <div class="stat-cell"><div class="stat-label">Layers active</div><div class="stat-value" id="ovLayers">—</div><div class="stat-sub">of <span id="ovLayersTotal">—</span> installed</div></div>
+        <div class="stat-cell"><div class="stat-label">Active alerts</div><div class="stat-value" id="ovAlerts">—</div><div class="stat-sub" id="ovThreat">threat level —</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Protection Layers</span><span class="panel-title" id="ovClock"></span></div>
+        <div class="panel-body" id="ovLayerList"></div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-head"><span class="panel-title">Alerts — last 24 hours</span>
+          <span class="chart-legend"><i class="lg low"></i>low <i class="lg med"></i>medium <i class="lg high"></i>high / critical</span></div>
+        <div class="panel-body"><div class="chart" id="alertChart"><div class="empty">Loading…</div></div></div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-head"><span class="panel-title">Recent alerts</span>
+          <a class="open-link" href="#" id="ovAlertsAll">View all →</a></div>
+        <div class="panel-body" id="ovRecentAlerts"><div class="empty">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- LAYERS -->
+    <section class="view" id="view-layers">
+      <div class="view-head"><h2>Layers</h2><p>Enable only the protection you need. Zero-Trust is on by default; the platform core always runs.</p></div>
+      <div class="panel"><div class="panel-body" id="layerList"></div></div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="view" id="view-alerts">
+      <div class="view-head"><h2>Alert timeline</h2><p>Every layer reports into one feed. History is kept across restarts.</p></div>
+      <div class="filter-bar">
+        <input id="alSearch" class="set-select fb-search" type="search" placeholder="Search alerts…" aria-label="Search alerts">
+        <select id="alLayer" class="set-select" aria-label="Layer">
+          <option value="">All layers</option><option value="zta">Zero-Trust</option><option value="network">Network</option>
+          <option value="ransomware">Ransomware</option><option value="content">Content</option></select>
+        <select id="alSev" class="set-select" aria-label="Minimum severity">
+          <option value="">Any severity</option><option value="medium">Medium and up</option>
+          <option value="high">High and up</option><option value="critical">Critical only</option></select>
+        <label class="fb-check"><input type="checkbox" id="alUnacked"> Unacknowledged only</label>
+        <span class="fb-count" id="alCount"></span>
+      </div>
+      <div class="panel"><div class="panel-body" id="alertList"><div class="empty">Loading…</div></div></div>
+    </section>
+
+    <!-- INCIDENTS -->
+    <section class="view" id="view-incidents">
+      <div class="view-head"><h2>Incidents</h2><p>Everything that happened across the platform, with the action taken.</p></div>
+      <div class="stat-strip" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-cell"><div class="stat-label">Open</div><div class="stat-value warn" id="incOpen">—</div></div>
+        <div class="stat-cell"><div class="stat-label">Acknowledged</div><div class="stat-value" id="incAck">—</div></div>
+        <div class="stat-cell"><div class="stat-label">Resolved</div><div class="stat-value" id="incResolved">—</div></div>
+      </div>
+      <div class="panel"><div class="panel-body" id="incidentList"><div class="empty">Loading…</div></div></div>
+    </section>
+
+    <!-- LAYER DETAIL (native, one platform look) -->
+    <section class="view" id="view-embed">
+      <div class="view-head"><h2 id="embedTitle">Layer dashboard</h2><p id="embedSub">Part of the NeuraShield platform.</p></div>
+      <div id="layerDetail"></div>
+    </section>
+
+    <!-- CONSENT -->
+    <section class="view" id="view-consent">
+      <div class="view-head"><h2>Consent &amp; privacy</h2><p>NeuraShield monitors only after you consent, and you can withdraw at any time.</p></div>
+      <div id="consentState"></div>
+      <div class="panel"><div class="panel-body">
+        <div class="consent-scroll consent-doc" id="consentDoc"></div>
+        <div style="display:flex;gap:10px;margin:16px 0 6px">
+          <button class="btn" id="btnAccept" style="width:auto;padding:11px 20px">Accept &amp; start protection</button>
+          <button class="btn danger" id="btnWithdraw" style="width:auto;padding:11px 20px;display:none">Withdraw consent</button>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- AUDIT -->
+    <section class="view" id="view-audit">
+      <div class="view-head"><h2>Audit log</h2><p>Tamper-evident record of platform events and every console action.</p></div>
+      <div id="verifyBanner"></div>
+      <div class="panel"><div class="panel-head"><span class="panel-title">Console Actions</span></div>
+        <div class="panel-body" id="auditList"><div class="empty">Loading…</div></div></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+      <div class="view-head"><h2>Settings</h2><p>Desktop notifications and platform preferences.</p></div>
+      <div class="panel danger-zone" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">Your data &amp; account</span></div>
+        <div class="panel-body">
+          <div class="set-sub" id="dataInfo" style="padding:12px 0 2px">Loading…</div>
+          <div class="set-row"><div><div class="set-label">Clear my data</div>
+            <div class="set-sub">Remove alert history, the audit log, or what the layers have learned about you. Your account stays.</div></div>
+            <button class="qa-btn" id="btnClearData">Clear data…</button></div>
+          <div class="set-row"><div><div class="set-label">Delete my account &amp; start fresh</div>
+            <div class="set-sub">Erases the account, consent and all stored data, removes the start-up entry, signs everyone out and restarts NeuraShield at the first-run setup. This cannot be undone.</div></div>
+            <button class="qa-btn danger" id="btnDeleteAccount">Delete account…</button></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">Startup</span></div>
+        <div class="panel-body">
+          <div class="set-row"><div><div class="set-label">Start NeuraShield with Windows</div>
+            <div class="set-sub" id="asState">Keeps protection running after every restart. Nothing monitors until consent is given.</div></div>
+            <span class="toggle" id="as-enabled"><span class="switch"></span></span></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">Desktop notifications</span>
+          <button class="qa-btn" id="notifTest">Send test</button></div>
+        <div class="panel-body" id="notifSettings">
+          <div class="set-row"><div><div class="set-label">Show notifications</div>
+            <div class="set-sub">Windows alerts when something needs your attention</div></div>
+            <span class="toggle" id="n-enabled"><span class="switch"></span></span></div>
+          <div class="set-row"><div><div class="set-label">Zero-Trust step-up prompts</div>
+            <div class="set-sub">Alert me to verify when session risk rises</div></div>
+            <span class="toggle" id="n-stepup"><span class="switch"></span></span></div>
+          <div class="set-row"><div><div class="set-label">Minimum severity</div>
+            <div class="set-sub">Only notify at or above this level</div></div>
+            <select id="n-sev" class="set-select"><option value="low">Low</option>
+              <option value="medium">Medium</option><option value="high">High</option>
+              <option value="critical">Critical</option></select></div>
+          <div class="set-divider">Per layer</div>
+          <div class="set-row"><div class="set-label">Zero-Trust Authentication</div><span class="toggle" id="n-zta"><span class="switch"></span></span></div>
+          <div class="set-row"><div class="set-label">Network Guardian</div><span class="toggle" id="n-network"><span class="switch"></span></span></div>
+          <div class="set-row"><div class="set-label">Ransomware Killer</div><span class="toggle" id="n-ransomware"><span class="switch"></span></span></div>
+          <div class="set-row"><div class="set-label">Content Threat Detection</div><span class="toggle" id="n-content"><span class="switch"></span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="view" id="view-about">
+      <div class="view-head"><h2>About NeuraShield</h2><p id="aboutVer">Autonomous AI cyber-defence platform · R26-CS-013</p></div>
+      <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="padding:16px">
+        <p class="muted" style="font-size:13.5px">NeuraShield is an on-premises platform in which four AI detection layers operate
+        as one system behind this console. All processing — behavioural analysis, file protection, network inspection and
+        content screening — runs on this computer. No data leaves the machine.</p>
+      </div></div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">Detection Layers</span></div>
+        <div class="panel-body">
+          <div class="about-layer">
+            <div class="about-layer-head"><h3>Zero-Trust Authentication</h3><span class="about-tag">Layer 3 · Core</span></div>
+            <p>Continuously verifies, after login, that the person using the computer is still the legitimate user. It models
+            keystroke-timing behaviour with a Siamese BiLSTM network and confirms liveness from the webcam when a check is required,
+            raising the assurance a session must satisfy as risk rises.</p>
+            <div class="about-dev">Developer — Deshapriya D.L.N.S. · IT22156556</div>
+          </div>
+          <div class="about-layer">
+            <div class="about-layer-head"><h3>Content Threat Detection</h3><span class="about-tag">Layer 4</span></div>
+            <p>Screens communications for phishing text, deepfake video and spoofed audio using a multimodal model set
+            (DistilBERT, a transfer-learned CNN and a ResNet audio model), with per-modality scores recorded for every verdict.</p>
+            <div class="about-dev">Developer — Mithara P.L.B. · IT22076670</div>
+          </div>
+          <div class="about-layer">
+            <div class="about-layer-head"><h3>Ransomware Killer</h3><span class="about-tag">Layer 2</span></div>
+            <p>Detects ransomware by file-change rate, entropy and process behaviour, then contains it: high-confidence threats
+            are terminated and every damaged file is rolled back from a clean versioned backup taken before the incident.</p>
+            <div class="about-dev">Developer — Jayasinghe J.A.D.S. · IT22293862</div>
+          </div>
+          <div class="about-layer">
+            <div class="about-layer-head"><h3>Network Guardian</h3><span class="about-tag">Layer 1</span></div>
+            <p>Watches live network traffic flows and flags anomalies — suspicious ports, command-and-control patterns, data
+            exfiltration — using an isolation forest and an autoencoder over flow features, without inspecting packet contents.</p>
+            <div class="about-dev">Developer — Uduwanage T.N. · IT22293312</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Authority</span></div>
+        <div class="panel-body" style="padding:16px">
+          <div class="sig-grid">
+            <div class="sig-box"><div class="sig-name">Prof. Harinda Fernando</div><div class="sig-role">Supervisor</div></div>
+            <div class="sig-box"><div class="sig-name">Ms. Ayesha Wijesooriya</div><div class="sig-role">Co-Supervisor</div></div>
+            <div class="sig-box"><div class="sig-name">Deshapriya D.L.N.S.</div><div class="sig-role">Team Lead · Zero-Trust (Layer 3)</div></div>
+            <div class="sig-box"><div class="sig-name">Mithara P.L.B.</div><div class="sig-role">Content Threat Detection (Layer 4)</div></div>
+            <div class="sig-box"><div class="sig-name">Jayasinghe J.A.D.S.</div><div class="sig-role">Ransomware Killer (Layer 2)</div></div>
+            <div class="sig-box"><div class="sig-name">Uduwanage T.N.</div><div class="sig-role">Network Guardian (Layer 1)</div></div>
+          </div>
+          <p class="muted" style="font-size:11.5px;margin-top:16px;font-family:var(--mono)">Project R26-CS-013 · NeuraShield v1.0.0</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- consequence / confirm modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-icon">!</div><h3 id="modalTitle">Turn off this layer?</h3></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="modalCancel" style="width:auto">Keep it on</button>
+      <button class="btn danger" id="modalConfirm" style="width:auto">Turn off</button>
+    </div>
+  </div>
+</div>
+
+<!-- guided tour -->
+<div class="tour-backdrop" id="tour">
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-card" id="tourCard">
+    <div class="tour-step" id="tourStep">1 / 6</div>
+    <h3 id="tourTitle">Welcome to NeuraShield</h3>
+    <p id="tourText"></p>
+    <div class="tour-foot">
+      <button class="btn ghost" id="tourSkip" style="width:auto;padding:8px 14px">Skip</button>
+      <button class="btn" id="tourNext" style="width:auto;padding:8px 16px">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- clear data / delete account -->
+<div class="modal-backdrop" id="dataModal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-icon">!</div><h3 id="dmTitle">Clear data</h3></div>
+    <div class="modal-body">
+      <div id="dmClearOpts">
+        <p style="margin:0 0 8px">Choose what to remove. Your account and settings are kept.</p>
+        <label class="dm-check"><input type="checkbox" id="dmAlerts" checked> Alert history and incident notes</label>
+        <label class="dm-check"><input type="checkbox" id="dmAudit"> Audit log (the record of console actions)</label>
+        <label class="dm-check"><input type="checkbox" id="dmLayers"> Layer data: Zero-Trust behaviour profile and face reference, ransomware state, content and network records <span class="muted">(layers restart afterwards)</span></label>
+        <label class="dm-check warn"><input type="checkbox" id="dmBackups"> Also delete the ransomware backup copies of my files <span class="muted">(these are your protection against ransomware)</span></label>
+      </div>
+      <div id="dmDeleteOpts" style="display:none">
+        <p style="margin:0 0 8px">This will permanently:</p>
+        <ul><li>delete the administrator account and sign everyone out,</li>
+          <li>withdraw consent and stop every layer,</li>
+          <li>erase all stored data, keys, the audit log and the alert history,</li>
+          <li>remove the start-with-Windows entry,</li>
+          <li>restart NeuraShield at the first-run setup.</li></ul>
+        <label class="dm-check warn"><input type="checkbox" id="dmDelBackups"> Also delete the ransomware backup copies of my files</label>
+        <div class="field" style="margin-top:12px"><label for="dmConfirm">Type DELETE to confirm</label><input id="dmConfirm" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="dmPassword">Your password</label><input type="password" id="dmPassword" autocomplete="current-password"></div>
+      <div class="auth-err" id="dmErr"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="dmCancel" style="width:auto">Cancel</button>
+      <button class="btn danger" id="dmGo" style="width:auto">Continue</button>
+    </div>
+  </div>
+</div>
+<div class="restart-overlay" id="restartOverlay" hidden>
+  <div class="restart-card"><div class="spinner"></div>
+    <h3>Resetting NeuraShield…</h3><p>Everything is being erased and the platform is restarting. You will be taken to the first-run setup in a moment.</p></div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

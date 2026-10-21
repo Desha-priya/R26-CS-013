@@ -24,6 +24,15 @@ wheels/
 .installed.cfg
 *.egg
 
+runtimes/
+build/
+dist/
+data/
+*.pyc
+__pycache__/
+
+
+
 # Virtual environments
 venv/
 ENV/

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 220px;
+      padding: 12px;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    h3 { margin: 0 0 8px 0; color: #8b5cf6; }
+    p { font-size: 12px; color: #94a3b8; }
+    input { width: 100%; box-sizing: border-box; padding: 6px; margin: 6px 0;
+            background: #1e293b; border: 1px solid #334155; color: #e2e8f0;
+            border-radius: 4px; }
+    button { width: 100%; padding: 6px; background: #8b5cf6; border: 0;
+             color: #fff; border-radius: 4px; cursor: pointer; }
+    #status { margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h3>NeuraShield</h3>
+  <p>Context detection is active.</p>
+  <p>Sending current tab URL to the platform.</p>
+  <p>Platform API key (same key as the NeuraShield console, Settings):</p>
+  <input id="key" type="password" autocomplete="off" placeholder="NEURASHIELD_API_KEY">
+  <button id="save">Save key</button>
+  <p id="status"></p>
+  <script src="popup.js"></script>
+</body>
+</html>
