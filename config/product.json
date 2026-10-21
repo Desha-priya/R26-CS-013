@@ -1,0 +1,32 @@
+{
+  "_comment": "Product-wide NeuraShield settings. Secrets are NEVER stored here (DPAPI store). 'platform_core' is the always-running hub/console/key-owner; it is NOT a monitoring layer. 'zta' is the Zero-Trust monitoring layer: on by default once consent is accepted, but the user can turn it off. Nothing monitors until consent.accepted is true.",
+  "product_name": "NeuraShield",
+  "version": "1.0.0",
+  "console": {
+    "host": "127.0.0.1",
+    "port": 9000
+  },
+  "platform_url": "http://127.0.0.1:8000",
+  "enabled_layers": {
+    "zta": true,
+    "network": false,
+    "ransomware": false,
+    "content": true
+  },
+  "consent": {
+    "accepted": true,
+    "accepted_at": 1792420305.807125,
+    "notice_version": "1.0"
+  },
+  "notifications": {
+    "enabled": true,
+    "min_severity": "medium",
+    "stepup": true,
+    "layers": {
+      "zta": true,
+      "network": true,
+      "ransomware": true,
+      "content": true
+    }
+  }
+}

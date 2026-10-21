@@ -1,0 +1,16 @@
+# NeuraShield gateway (supervisor + console + desktop shell) — runtime deps.
+# Deliberately small and conflict-free; the gateway does no ML.
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+python-multipart>=0.0.9
+argon2-cffi>=23.1
+requests>=2.31,<3
+# Native desktop window for the app (falls back to the browser if absent).
+pywebview>=5.0
+# Desktop notifications (optional — the console falls back to a built-in
+# PowerShell toast on Windows if these are not installed).
+win11toast>=0.35 ; sys_platform == "win32"
+plyer>=2.1
+# System tray (optional — app runs without it if unavailable).
+pystray>=0.19
+pillow>=10.0

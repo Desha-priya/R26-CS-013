@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-10-19T22:20:06.079598",
+  "layer": "MultimodalContentThreatDetection",
+  "final_risk_score": 1.0,
+  "final_decision": "HIGH_RISK",
+  "recommendation": "ALERT \u2014 notify Layer D (Zero-Trust) to tighten authentication",
+  "modality_scores": {
+    "text": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "video": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "audio": {
+      "prediction": "fake",
+      "risk_score": 1.0,
+      "confidence": 1.0
+    }
+  },
+  "weights_used": {
+    "text": 0.4,
+    "video": 0.4,
+    "audio": 0.2
+  },
+  "fusion_detail": {
+    "active_modalities": [
+      "audio"
+    ],
+    "effective_weights": {
+      "audio": 1.0
+    },
+    "reliability_used": {
+      "audio": 0.91
+    },
+    "agreeing_modalities": [
+      "audio"
+    ],
+    "consistency_boost": 0.0,
+    "weighted_risk_before_boost": 1.0
+  },
+  "event_type": "threat_detection",
+  "alert_id": "alert_20261019_222006_080428",
+  "_audit_prev_signature": "c44c21af485e6ba332748b49624a61df2704f82e8f1e47f5e8a675a5f821797e",
+  "_audit_signature": "5803a766d5a52bd912d4fd8d977105c734800f84cbec1ea6450b53bec027e642"
+}

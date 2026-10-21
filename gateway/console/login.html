@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · NeuraShield</title>
+<link rel="stylesheet" href="/static/app.css">
+<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("ns_theme")||"light");}catch(e){}})();</script>
+</head>
+<body>
+<div class="auth-wrap">
+  <form class="auth-card" method="post" action="/login" id="form">
+    <div class="brand-row">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z" stroke="#1f5f8b" stroke-width="1.8" fill="rgba(31,95,139,.07)"/>
+        <path d="M16 10v7M16 20.5v.5" stroke="#1f5f8b" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NeuraShield</span>
+    </div>
+    <p class="auth-sub">Operator console — sign in to continue</p>
+    <div class="auth-err" id="err"></div>
+    <div class="field">
+      <label for="u">Username</label>
+      <input id="u" name="username" autocomplete="username" required autofocus>
+    </div>
+    <div class="field">
+      <label for="p">Password</label>
+      <input id="p" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <label style="display:flex;gap:9px;align-items:center;font-size:13px;color:var(--ink-2);margin-bottom:16px">
+      <input type="checkbox" id="remember" name="remember" value="1"> Stay signed in on this computer
+    </label>
+    <button class="btn" type="submit">Sign in</button>
+    <p class="auth-hint"><a href="/recover">Forgot password?</a><br>
+      Access is limited to this computer. All sign-ins are recorded.</p>
+  </form>
+</div>
+<script>
+const f=document.getElementById('form'), err=document.getElementById('err');
+f.addEventListener('submit', async e=>{
+  e.preventDefault();
+  err.classList.remove('show');
+  const r=await fetch('/login',{method:'POST',body:new FormData(f),redirect:'manual'});
+  if(r.type==='opaqueredirect'||r.status===0||r.ok){ location.href='/'; return; }
+  let msg='Invalid username or password';
+  try{ const j=await r.json(); if(j.detail) msg=j.detail; }catch(_){}
+  err.textContent=msg; err.classList.add('show');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+# NeuraShield — Content Threat Detection (Layer 4) runtime requirements
+# CORRECTED for Python 3.11 + CUDA 12.6. The previous pins were not installable
+# (torch 2.13 / transformers 5.15 do not exist) and mismatched TF with Keras,
+# which is why the video (.h5) and audio (.pth) models would not load.
+#
+# Install order matters for the CUDA wheels — see INSTALL note at the bottom.
+
+# ---- PyTorch stack (audio ResNet18 .pth + torchvision resnet) --------------
+# torch 2.6.0 is a real release; these three versions ship together.
+torch==2.6.0
+torchvision==0.21.0
+torchaudio==2.6.0
+
+# ---- TensorFlow / Keras (video MobileNetV2 .h5) ----------------------------
+# TF 2.16 bundles Keras 3, but is only compatible with Keras 3.0–3.1.
+# tf-keras provides the Keras-2 loader used as a fallback for older .h5 files.
+tensorflow==2.16.1
+keras==3.1.1
+tf-keras==2.16.0
+ml-dtypes==0.3.2
+h5py==3.11.0
+
+# ---- Transformers (text DistilBERT phishing) -------------------------------
+transformers==4.44.2
+tokenizers==0.19.1
+huggingface-hub==0.24.6
+safetensors==0.4.5
+
+# ---- Core / shared ---------------------------------------------------------
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.5.2
+pandas==2.2.3
+pillow==10.4.0
+protobuf==4.25.5
+
+# ---- Media / IO ------------------------------------------------------------
+opencv-python==4.10.0.84
+librosa==0.10.2.post1
+soundfile==0.12.1
+audioread==3.0.1
+soxr==0.5.0.post1
+SoundCard==0.4.3
+mss==9.0.1
+
+# ---- Web service -----------------------------------------------------------
+fastapi==0.115.6
+uvicorn==0.32.1
+python-multipart==0.0.17
+requests==2.32.3
+PyYAML==6.0.2
+cryptography==43.0.3
+
+# ---- Windows call/window capture helpers -----------------------------------
+PyGetWindow==0.0.9
+pywin32==308 ; sys_platform == "win32"
+
+# INSTALL (Windows, Python 3.11):
+#   1) python -m pip install --upgrade pip
+#   2) pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
+#          --index-url https://download.pytorch.org/whl/cu126
+#   3) pip install -r requirements.txt
+# Step 2 fetches the CUDA 12.6 build from the PyTorch index; step 3 then
+# installs everything else from PyPI without touching torch.
