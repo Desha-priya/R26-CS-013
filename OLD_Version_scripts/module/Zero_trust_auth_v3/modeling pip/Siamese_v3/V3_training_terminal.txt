@@ -1,0 +1,117 @@
+The Siamese BiLSTM achieved an EER of 14.55% on the held-out test set, 
+with 85.60% authentication accuracy, 17.75% false acceptance rate, and 10.04% false rejection rate.
+
+
+======================================================================
+AALTO V3 SIAMESE BiLSTM TRAINING
+======================================================================
+
+Device : cuda
+GPU: NVIDIA GeForce RTX 4060 Laptop GPU
+
+Sequence:
+    50 timesteps x 16 features
+
+Model:
+    BiLSTM hidden size : 128
+    LSTM layers       : 2
+    Embedding size    : 64
+    Margin            : 1.0
+    Batch size        : 256
+    Maximum epochs    : 50
+
+======================================================================
+LOADING TRAIN-ONLY SCALER
+======================================================================
+
+======================================================================
+TRAIN-ONLY NORMALIZATION SCALER
+======================================================================
+Scaler file: processed\siamese_bilstm_v3\reports\normalization_audit\train_only_scaler_v3.npz
+Available arrays: ['mean', 'std', 'feature_count', 'sequence_length']
+Features: 16
+Scaler source: TRAIN ONLY
+Validation used for scaler: NO
+Test used for scaler: NO
+
+======================================================================
+LOADING PAIR MANIFESTS
+======================================================================
+Train pairs      : 365,669
+Validation pairs : 78,304
+Test pairs       : 77,665
+
+======================================================================
+BUILDING SIAMESE BiLSTM
+======================================================================
+Trainable parameters : 585,920
+
+======================================================================
+TRAINING
+======================================================================
+
+--
+Early stopping after 14 epochs.
+
+======================================================================
+LOADING BEST MODEL
+======================================================================
+Best epoch : 7
+Best validation loss : 0.110104
+
+======================================================================
+VALIDATION THRESHOLD SELECTION
+======================================================================
+Validation threshold : 0.552400
+Validation accuracy  : 0.852868
+Validation FAR       : 0.180812
+Validation FRR       : 0.103303
+Validation EER       : 0.149590
+
+======================================================================
+FINAL TEST EVALUATION
+======================================================================
+IMPORTANT:
+Test data is NOT used to select the threshold.
+
+Test threshold : 0.552400
+Test accuracy  : 0.855984
+Test FAR       : 0.177470
+Test FRR       : 0.100365
+Test TPR       : 0.899635
+Test EER       : 0.145484
+
+======================================================================
+SIAMESE BiLSTM V3 TRAINING COMPLETE
+======================================================================
+
+Best epoch             : 7
+Best validation loss   : 0.110104
+Validation threshold   : 0.552400
+
+FINAL TEST
+----------------------------------------------------------------------
+Accuracy : 0.855984
+FAR      : 0.177470
+FRR      : 0.100365
+TPR      : 0.899635
+EER      : 0.145484
+
+OUTPUTS
+----------------------------------------------------------------------
+Best model : processed\siamese_bilstm_v3\model_training_v3\checkpoints\best_siamese_bilstm_v3.pt
+History    : processed\siamese_bilstm_v3\model_training_v3\reports\training_history_v3.json
+Summary    : processed\siamese_bilstm_v3\model_training_v3\reports\training_summary_v3.json
+
+Processing time : 140.20 minutes
+
+======================================================================
+RESEARCH CONTROLS
+======================================================================
+Shared Siamese weights       : YES
+Train-only normalization     : YES
+Validation threshold        : YES
+Test threshold tuning       : NO
+Test used for training      : NO
+Participant leakage         : NO
+======================================================================

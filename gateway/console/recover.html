@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recover account · NeuraShield</title>
+<link rel="stylesheet" href="/static/app.css">
+<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("ns_theme")||"light");}catch(e){}})();</script>
+</head>
+<body>
+<div class="auth-wrap">
+  <form class="auth-card" id="form">
+    <div class="brand-row">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2 4 7v8c0 7 5 12 12 15 7-3 12-8 12-15V7L16 2Z" stroke="#1f5f8b" stroke-width="1.8" fill="rgba(31,95,139,.07)"/>
+        <path d="M16 10v7M16 20.5v.5" stroke="#1f5f8b" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NeuraShield</span>
+      <span class="brand-sub">Recover</span>
+    </div>
+    <div class="auth-title">Reset your password</div>
+    <p class="auth-sub">Answer both security questions to set a new password.</p>
+    <div class="auth-err" id="err"></div>
+    <div class="auth-ok" id="ok" style="display:none">Password reset. You can sign in now.</div>
+
+    <div class="field"><label id="lq1">Security question 1</label>
+      <input id="a1" autocomplete="off" required></div>
+    <div class="field"><label id="lq2">Security question 2</label>
+      <input id="a2" autocomplete="off" required></div>
+    <div class="field"><label for="np">New password</label>
+      <input id="np" type="password" autocomplete="new-password" required minlength="8"></div>
+    <div class="field"><label for="np2">Confirm new password</label>
+      <input id="np2" type="password" autocomplete="new-password" required minlength="8"></div>
+
+    <button class="btn" type="submit" id="submitBtn">Reset password</button>
+    <p class="auth-hint"><a href="/login">Back to sign in</a></p>
+  </form>
+</div>
+<style>.auth-ok{background:var(--ok-bg);border:1px solid #bcdcc4;color:#256b3b;border-radius:3px;padding:10px 12px;font-size:13px;margin-bottom:16px}</style>
+<script>
+const err=document.getElementById('err'), ok=document.getElementById('ok');
+(async function(){
+  try{
+    const r=await fetch('/api/recover/questions'); const j=await r.json();
+    if(j.questions){ document.getElementById('lq1').textContent=j.questions[0]; document.getElementById('lq2').textContent=j.questions[1]; }
+    else throw new Error(j.detail||'no questions');
+  }catch(e){ err.textContent='Account recovery is not available.'; err.classList.add('show');
+    document.getElementById('submitBtn').disabled=true; }
+})();
+document.getElementById('form').addEventListener('submit', async e=>{
+  e.preventDefault(); err.classList.remove('show');
+  const np=document.getElementById('np').value;
+  if(np!==document.getElementById('np2').value){ err.textContent='Passwords do not match'; err.classList.add('show'); return; }
+  const fd=new FormData(); fd.append('a1',document.getElementById('a1').value);
+  fd.append('a2',document.getElementById('a2').value); fd.append('new_password',np);
+  const r=await fetch('/api/recover/reset',{method:'POST',body:fd});
+  if(r.ok){ ok.style.display='block'; document.getElementById('form').querySelectorAll('input,button').forEach(x=>x.disabled=true);
+    setTimeout(()=>location.href='/login',1600); return; }
+  let m='Could not reset the password'; try{ const j=await r.json(); if(j.detail)m=j.detail; }catch(_){}
+  err.textContent=m; err.classList.add('show');
+});
+</script>
+</body>
+</html>

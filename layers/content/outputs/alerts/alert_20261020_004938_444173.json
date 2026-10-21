@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-10-20T00:49:38.443385",
+  "layer": "MultimodalContentThreatDetection",
+  "final_risk_score": 0.0,
+  "final_decision": "LOW_RISK",
+  "recommendation": "SAFE \u2014 no action required",
+  "modality_scores": {
+    "text": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0,
+      "error": "No module named 'transformers'"
+    },
+    "video": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    },
+    "audio": {
+      "prediction": "unknown",
+      "risk_score": 0.5,
+      "confidence": 0.0
+    }
+  },
+  "weights_used": {
+    "text": 0.4,
+    "video": 0.4,
+    "audio": 0.2
+  },
+  "fusion_detail": {
+    "note": "no active modalities"
+  },
+  "event_type": "threat_detection",
+  "alert_id": "alert_20261020_004938_444173",
+  "_audit_prev_signature": "f9d0786a1caca8af1befe0815f45360f60b869ca9eace3bea929b00adec360ea",
+  "_audit_signature": "f31108bfcbd8f3674a05bb98ef6078cd6b6243a111fa66d67aa7f5a1107cb0c5"
+}

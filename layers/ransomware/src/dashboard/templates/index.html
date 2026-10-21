@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuraShield — Ransomware Killer</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span class="brand-name">NeuraShield</span>
+      <span class="brand-sub">Ransomware Killer</span>
+    </div>
+
+    <div class="pulse-wrap">
+      <svg id="pulse-svg" viewBox="0 0 600 60" preserveAspectRatio="none">
+        <path id="pulse-path" d="M0,30 L600,30" />
+      </svg>
+    </div>
+
+    {% if demo_mode %}
+    <div class="sim-buttons">
+      <button class="sim-btn" id="sim-mild-btn" data-intensity="mild">Simulate Attack</button>
+      <button class="sim-btn sim-btn-strong" id="sim-aggressive-btn" data-intensity="aggressive">Simulate Severe Attack</button>
+    </div>
+    {% endif %}
+
+    <div class="status-chip" id="status-chip">
+      <span class="dot"></span>
+      <span id="status-text">CHECKING…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <aside class="rail">
+      <div class="rail-title">Defense Layers</div>
+      <div id="layer-list" class="layer-list"><!-- populated by JS --></div>
+
+      <div class="rail-title rail-gap">Endpoint Vitals</div>
+      <div class="vitals">
+        <div class="vital-row"><span>CPU</span><span id="cpu-val" class="mono">—</span></div>
+        <div class="vital-row"><span>Memory</span><span id="mem-val" class="mono">—</span></div>
+        <div class="vital-row"><span>Uptime</span><span id="uptime-val" class="mono">—</span></div>
+      </div>
+
+      <div class="rail-title rail-gap">Summary</div>
+      <div class="vitals">
+        <div class="vital-row"><span>Threats caught</span><span id="stat-threats" class="mono">0</span></div>
+        <div class="vital-row"><span>Files restored</span><span id="stat-files" class="mono">0</span></div>
+        <div class="vital-row"><span>Avg TTR</span><span id="stat-ttr" class="mono">—</span></div>
+      </div>
+    </aside>
+
+    <section class="feed">
+      <div class="protect-box" id="protect-box">
+        <div class="protect-head">
+          <span class="protect-title">Protection</span>
+          <span class="protect-state" id="protect-state">…</span>
+        </div>
+        <div class="protect-msg" id="protect-msg"></div>
+        <div class="progress" id="backup-progress" hidden><div class="progress-bar" id="backup-bar"></div></div>
+        <div class="protect-stats">
+          <div><span class="k">Files protected</span><span class="v mono" id="ps-files">—</span></div>
+          <div><span class="k">File events (60 s)</span><span class="v mono" id="ps-events">—</span></div>
+          <div><span class="k">Incidents</span><span class="v mono" id="ps-incidents">—</span></div>
+          <div><span class="k">Backups</span><span class="v mono" id="ps-backups">—</span></div>
+        </div>
+        <div class="backup-line mono" id="backup-line" hidden></div>
+        <div class="meter" id="meter" hidden>
+          <div class="scope-title">Detection meter <span class="meter-health mono" id="meter-health"></span></div>
+          <div id="meter-rows"></div>
+        </div>
+        <div id="consent-area" hidden>
+          <div class="scope-title">Folders that will be watched and backed up</div>
+          <ul class="scope-list" id="scope-list"></ul>
+          <div class="scope-note" id="scope-note"></div>
+          <label class="consent-check"><input type="checkbox" id="consent-check">
+            I understand Layer 2 will read and copy the files in these folders into its backup folder.</label>
+          <button class="consent-btn" id="consent-btn" disabled>Start protecting</button>
+        </div>
+        <button class="revoke-btn" id="revoke-btn" hidden>Stop protecting</button>
+        <div class="activity-title">Live file activity</div>
+        <div class="activity" id="activity"><div class="activity-empty">Waiting for the service…</div></div>
+      </div>
+
+      {% if demo_mode %}
+      <div class="ml-demo-box" id="live-test-box">
+        <div class="ml-demo-header">
+          <span class="ml-demo-title">Live end-to-end test</span>
+          <span class="ml-demo-sub">Runs the REAL layer: makes test files inside a protected folder, waits for their backup, runs a fake ransomware process against them, then checks that the layer detected it, wrote the report and restored every file byte-for-byte. Only test files it creates itself are touched.</span>
+        </div>
+        <button class="ml-demo-btn" id="live-test-btn">Run live test</button>
+        <button class="ml-demo-btn" id="live-clean-btn" hidden>Delete the test files</button>
+        <div id="live-test-out"></div>
+      </div>
+
+      <div class="ml-demo-box">
+        <div class="ml-demo-header">
+          <span class="ml-demo-title">Live ML Model Test</span>
+          <span class="ml-demo-sub">Runs the real trained Isolation Forest + Random Forest + SHAP on a random real sample from the dataset — not a script.</span>
+        </div>
+        <button class="ml-demo-btn" id="ml-demo-btn">Run real model on a random sample</button>
+        <div id="ml-demo-results"></div>
+      </div>
+      {% endif %}
+
+      <div class="feed-header feed-header-row">
+        <div>
+          <h1>Incident Reports</h1>
+          <p class="feed-sub">One report per attack: what was hit, what was restored, what needs you. Newest first.</p>
+        </div>
+        <div class="feed-header-actions">
+          <label class="show-cleared-toggle">
+            <input type="checkbox" id="show-cleared-checkbox">
+            Show cleared
+          </label>
+          <button class="clear-all-btn" id="clear-all-btn">Clear all</button>
+        </div>
+      </div>
+
+      <div id="reports" class="reports">
+        <div class="empty-state" id="reports-empty">
+          <div class="empty-glyph">◇</div>
+          <div class="empty-title">No incidents</div>
+          <div class="empty-sub">Files are being watched. If an attack is detected, the full report appears here.</div>
+        </div>
+      </div>
+
+      <div class="scan-box" id="scan-box">
+        <div class="scan-head">
+          <div>
+            <div class="scan-title">Disk scan</div>
+            <div class="scan-sub">Looks in the protected folders for encrypted or damaged files, ransomware-style file names and ransom notes, and checks what can be restored.</div>
+          </div>
+          <button class="consent-btn" id="scan-btn">Scan now</button>
+        </div>
+        <div id="scan-result"></div>
+      </div>
+
+      <div class="feed-header feed-header-sub">
+        <h2>Signed alerts</h2>
+        <p class="feed-sub">The alerts sent to the platform and the other layers. An attack can produce several.</p>
+      </div>
+
+      <div id="timeline" class="timeline">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-glyph">◇</div>
+          <div class="empty-title">No incidents yet</div>
+          <div class="empty-sub">This endpoint is being monitored. Detected threats and their automated response will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+{% if demo_mode %}<script src="{{ url_for('static', filename='demo.js') }}"></script>{% endif %}
+</body>
+</html>

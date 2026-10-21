@@ -1,0 +1,132 @@
+{
+  "_comment": "NeuraShield layer launch contract. The supervisor reads this to start each enabled layer in its own isolated runtime, with the shared API key / HMAC secret / platform URL injected as environment variables. Paths are relative to the install root. Nothing here changes any layer's code; it only describes HOW each layer is launched. 'core' is always started (it owns the key, the hub and the console); the other three are optional and chosen at install / in the console. In the packaged product every layer is the single NeuraShield.exe started as '--run-layer <id>' (see gateway/layer_host.py). 'requires' lists the Python packages a layer needs; the supervisor checks them before launching (source runs) and reports what is missing.",
+  "core": {
+    "id": "core",
+    "name": "Zero-Trust Platform",
+    "layer_number": 3,
+    "owner": "Deshapriya D.L.N.S.",
+    "always_on": true,
+    "dir": "core/srC",
+    "entry": [
+      "neurashield_launcher.py"
+    ],
+    "host": "127.0.0.1",
+    "port": 8000,
+    "health_url": "http://127.0.0.1:8000/api/platform/status",
+    "health_needs_key": true,
+    "data_subdir": "core",
+    "env": {
+      "NEURASHIELD_PORT": "8000",
+      "NEURASHIELD_RESOURCE_DIR": "core",
+      "NEURASHIELD_DATA_DIR": "data/core"
+    },
+    "requires": [
+      "torch",
+      "cv2",
+      "fastapi",
+      "uvicorn",
+      "pynput",
+      "cryptography",
+      "numpy"
+    ]
+  },
+  "network": {
+    "id": "network",
+    "name": "Network Guardian",
+    "layer_number": 1,
+    "owner": "Uduwanage T.N.",
+    "always_on": false,
+    "dir": "layers/network",
+    "entry": [
+      "app.py"
+    ],
+    "host": "127.0.0.1",
+    "port": 5000,
+    "health_url": "http://127.0.0.1:5000/health",
+    "health_needs_key": false,
+    "data_subdir": "network",
+    "needs_admin": true,
+    "needs_npcap": true,
+    "env": {
+      "NEURASHIELD_DATA_DIR": "data/network",
+      "NEURASHIELD_NET_INTERFACE": ""
+    },
+    "requires": [
+      "flask",
+      "scapy",
+      "sklearn",
+      "torch",
+      "pandas",
+      "numpy"
+    ]
+  },
+  "ransomware": {
+    "id": "ransomware",
+    "name": "Ransomware Killer",
+    "layer_number": 2,
+    "owner": "Jayasinghe J.A.D.S.",
+    "always_on": false,
+    "dir": "layers/ransomware",
+    "entry": [
+      "-m",
+      "main",
+      "--dashboard"
+    ],
+    "host": "127.0.0.1",
+    "port": 5050,
+    "health_url": "http://127.0.0.1:5050/api/health",
+    "health_needs_key": false,
+    "data_subdir": "ransomware",
+    "needs_admin": true,
+    "env": {
+      "NEURASHIELD_HOME": "data/ransomware",
+      "NEURASHIELD_DASHBOARD_HOST": "127.0.0.1",
+      "NEURASHIELD_DASHBOARD_PORT": "5050",
+      "NEURASHIELD_REQUIRE_MODEL_MANIFEST": "1"
+    },
+    "requires": [
+      "flask",
+      "waitress",
+      "watchdog",
+      "psutil",
+      "yaml",
+      "sklearn",
+      "joblib",
+      "numpy"
+    ]
+  },
+  "content": {
+    "id": "content",
+    "name": "Content Threat Detection",
+    "layer_number": 4,
+    "owner": "Mithara P.L.B.",
+    "always_on": false,
+    "dir": "layers/content",
+    "entry": [
+      "demo/app.py"
+    ],
+    "host": "127.0.0.1",
+    "port": 8001,
+    "health_url": "http://127.0.0.1:8001/health",
+    "health_needs_key": false,
+    "data_subdir": "content",
+    "env": {
+      "NEURASHIELD_DATA_DIR": "data/content",
+      "NEURASHIELD_KEY_DIR": "data/content/.neurashield",
+      "NEURASHIELD_LAYER_D_URL": "http://127.0.0.1:8000/api/platform/alert",
+      "NEURASHIELD_CORS_ORIGINS": "http://127.0.0.1:9000"
+    },
+    "requires": [
+      "fastapi",
+      "uvicorn",
+      "tensorflow",
+      "tf_keras",
+      "h5py",
+      "torch",
+      "transformers",
+      "cv2",
+      "librosa",
+      "soundfile"
+    ]
+  }
+}

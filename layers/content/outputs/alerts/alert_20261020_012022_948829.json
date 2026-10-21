@@ -1,0 +1,13 @@
+{
+  "event_type": "alert_acknowledged",
+  "acknowledged_alert_id": "alert_20261020_011957_798142",
+  "note": "Acknowledged from dashboard banner",
+  "timestamp": "2026-10-20T01:20:22.947848",
+  "snoozed_categories": [
+    "phishing"
+  ],
+  "snoozed_until": "2026-10-20T01:25:22.947848",
+  "alert_id": "alert_20261020_012022_948829",
+  "_audit_prev_signature": "fc19ebb3efa619fd3c23b3b6ab1a7136b75a9847f9dee149567cbb5653503931",
+  "_audit_signature": "edc22c5b3a1ad2676ccb54398493a946e96bc22643d767518083669ca744d3f2"
+}
